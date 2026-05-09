@@ -19,6 +19,7 @@ interface ChatHeaderProps {
   isProfileLoading?: boolean;
   onRetryProfile?: () => void;
   isChatLoading?: boolean;
+  isChatFetching?: boolean;
   isChatError?: boolean;
   onRetryChat?: () => void;
 }
@@ -31,6 +32,7 @@ const ChatHeader = ({
   isProfileLoading,
   onRetryProfile,
   isChatLoading,
+  isChatFetching,
   isChatError,
   onRetryChat,
 }: ChatHeaderProps) => {
@@ -52,6 +54,9 @@ const ChatHeader = ({
   }, [chat.id]);
 
   const initials = getInitials(displayName);
+  const hasMemberCount = displayChat.type === "group" && displayChat.member_count != null;
+  const isGroupInfoLoading =
+    displayChat.type === "group" && (isChatLoading || isChatFetching || !hasMemberCount);
 
   let statusContent: React.ReactNode = "Messages";
   let statusColor = "text-muted-foreground";
@@ -98,7 +103,7 @@ const ChatHeader = ({
       statusContent = "Offline";
     }
   } else {
-    if (isChatLoading) {
+    if (isGroupInfoLoading) {
       statusContent = <Skeleton className="h-[13px] w-24 rounded-full" />;
     } else if (isChatError) {
       statusContent = (
@@ -120,7 +125,7 @@ const ChatHeader = ({
       statusContent = "Someone is typing...";
       statusColor = "text-muted-foreground italic font-medium animate-pulse";
     } else {
-      statusContent = `${displayChat.member_count || 0} members`;
+      statusContent = `${displayChat.member_count} members`;
       statusColor = "text-muted-foreground";
     }
   }
@@ -136,7 +141,7 @@ const ChatHeader = ({
               className={`flex items-center gap-2 transition-opacity ${
                 !isBusy &&
                 ((displayChat.type === "private" && partnerProfile && !isDeleted) ||
-                  (displayChat.type === "group" && !isChatLoading && !isChatError))
+                  (displayChat.type === "group" && !isGroupInfoLoading && !isChatError))
                   ? "cursor-pointer hover:opacity-80"
                   : "cursor-default opacity-100"
               }`}
@@ -144,13 +149,13 @@ const ChatHeader = ({
                 if (isBusy) return;
                 if (displayChat.type === "private" && partnerId && partnerProfile && !isDeleted) {
                   openProfileModal(partnerId, { hideMessageButton: true });
-                } else if (displayChat.type === "group" && !isChatLoading && !isChatError) {
+                } else if (displayChat.type === "group" && !isGroupInfoLoading && !isChatError) {
                   setShowGroupDialog(true);
                 }
               }}
             >
               <Avatar className="size-8">
-                {isProfileLoading || (displayChat.type === "group" && isChatLoading) ? (
+                {isProfileLoading || isGroupInfoLoading ? (
                   <Skeleton className="size-full rounded-full" />
                 ) : (
                   <>
@@ -169,7 +174,7 @@ const ChatHeader = ({
                 )}
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                {isProfileLoading || (displayChat.type === "group" && isChatLoading) ? (
+                {isProfileLoading || isGroupInfoLoading ? (
                   <Skeleton className="h-[13px] w-32 mb-1" />
                 ) : (
                   <span className="truncate font-medium">{displayName}</span>

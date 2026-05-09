@@ -12,6 +12,7 @@ interface ChatRoomHeaderProps {
   isProfileFetching: boolean;
   refetchProfile: () => void;
   isChatLoading: boolean;
+  isChatFetching: boolean;
   isChatError: boolean;
   refetchChat: () => void;
   isVirtual: boolean;
@@ -30,6 +31,7 @@ export const ChatRoomHeader = ({
   isProfileFetching,
   refetchProfile,
   isChatLoading,
+  isChatFetching,
   isChatError,
   refetchChat,
   isVirtual,
@@ -38,7 +40,7 @@ export const ChatRoomHeader = ({
   chatError,
   profileError,
 }: ChatRoomHeaderProps) => {
-  const isFetchingChat = isChatLoading;
+  const isFetchingChat = isChatLoading || isChatFetching;
 
   const isFetchingVirtualProfile = isVirtual && (isProfileLoading || isProfileFetching);
 
@@ -71,6 +73,7 @@ export const ChatRoomHeader = ({
         isProfileLoading={isProfileLoading}
         onRetryProfile={refetchProfile}
         isChatLoading={isChatLoading}
+        isChatFetching={isChatFetching}
         isChatError={isChatError}
         onRetryChat={refetchChat}
       />

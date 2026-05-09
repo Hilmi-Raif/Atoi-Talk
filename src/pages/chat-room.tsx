@@ -18,6 +18,7 @@ const ChatRoom = () => {
     isProfileFetching,
     refetchProfile,
     isChatLoading,
+    isChatFetching,
     isChatError,
     refetchChat,
     chatError,
@@ -100,6 +101,7 @@ const ChatRoom = () => {
         isProfileFetching={isProfileFetching}
         refetchProfile={refetchProfile}
         isChatLoading={isChatLoading}
+        isChatFetching={isChatFetching}
         isChatError={isChatError}
         refetchChat={refetchChat}
         isVirtual={isVirtual}

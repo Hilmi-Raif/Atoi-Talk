@@ -31,4 +31,3 @@ doc
 *.sw?
 .vercel
 temp.env
-vercel.json

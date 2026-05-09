@@ -186,6 +186,7 @@ export const useChatRoom = () => {
     isProfileFetching: isFetchingProfile,
     refetchProfile,
     isChatLoading,
+    isChatFetching: isFetchingSingleChat,
     isChatError,
     refetchChat,
     chatError,
