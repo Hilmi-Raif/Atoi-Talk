@@ -221,19 +221,23 @@ export function NavFooter({
         </SidebarMenuItem>
       </SidebarMenu>
 
-      <MyProfileDialog
-        open={openAccount}
-        onOpenChange={setOpenAccount}
-        user={activeUser}
-        onOpenSecurity={() => setOpenSecurity(true)}
-        onOpenChangeEmail={() => setOpenChangeEmail(true)}
-      />
+      {openAccount && (
+        <MyProfileDialog
+          open={openAccount}
+          onOpenChange={setOpenAccount}
+          user={activeUser}
+          onOpenSecurity={() => setOpenSecurity(true)}
+          onOpenChangeEmail={() => setOpenChangeEmail(true)}
+        />
+      )}
 
-      <ChangeEmailDialog
-        open={openChangeEmail}
-        onOpenChange={setOpenChangeEmail}
-        user={activeUser}
-      />
+      {openChangeEmail && (
+        <ChangeEmailDialog
+          open={openChangeEmail}
+          onOpenChange={setOpenChangeEmail}
+          user={activeUser}
+        />
+      )}
 
       <SecurityDialog open={openSecurity} onOpenChange={setOpenSecurity} user={activeUser} />
 

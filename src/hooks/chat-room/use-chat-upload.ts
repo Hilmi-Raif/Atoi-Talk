@@ -113,7 +113,7 @@ export function useChatUpload({ uploadMedia, setAttachments, attachments }: UseC
         uploadingKeysRef.current.delete(key);
 
         if (remainingFiles.length > 0 && pendingUploadsRef.current.length > 0) {
-          captchaRef.current?.reset();
+          captchaRef.current?.execute();
         } else {
           setIsSolvingCaptcha(false);
         }
@@ -138,7 +138,7 @@ export function useChatUpload({ uploadMedia, setAttachments, attachments }: UseC
       uploadingKeysRef.current.delete(key);
 
       if (remainingFiles.length > 0) {
-        captchaRef.current?.reset();
+        captchaRef.current?.execute();
       } else {
         setIsSolvingCaptcha(false);
       }
@@ -203,7 +203,7 @@ export function useChatUpload({ uploadMedia, setAttachments, attachments }: UseC
 
     pendingUploadsRef.current = [...pendingUploadsRef.current, ...validFiles];
     setIsSolvingCaptcha(true);
-    captchaRef.current?.reset();
+    captchaRef.current?.execute();
   };
 
   return {

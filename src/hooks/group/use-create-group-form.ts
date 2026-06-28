@@ -44,7 +44,7 @@ export const useCreateGroupForm = (onClose: (open: boolean) => void) => {
     new Promise<string>((resolve, reject) => {
       captchaResolverRef.current = resolve;
       captchaRejecterRef.current = reject;
-      captchaRef.current?.reset();
+      captchaRef.current?.execute();
 
       window.setTimeout(() => {
         if (captchaResolverRef.current === resolve) {

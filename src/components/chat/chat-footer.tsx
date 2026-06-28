@@ -258,6 +258,7 @@ const ChatFooter = ({
     <footer className="relative mx-auto p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] gap-2 w-full flex flex-col items-start bg-background border-t">
       <Captcha
         ref={captchaRef}
+        mode="execute"
         onVerify={(token) => {
           if (pendingUploadsRef.current.length > 0) {
             processNextFile(token);
@@ -273,7 +274,7 @@ const ChatFooter = ({
         }}
         onExpire={() => {
           if (pendingUploadsRef.current.length > 0) {
-            captchaRef.current?.reset();
+            captchaRef.current?.execute();
           } else {
             setIsSolvingCaptcha(false);
           }

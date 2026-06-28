@@ -89,6 +89,7 @@ export function MyProfileDialog({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const captchaRef = useRef<CaptchaHandle>(null);
   const captchaResolverRef = useRef<((token: string) => void) | null>(null);
+  const captchaRejecterRef = useRef<((error: Error) => void) | null>(null);
 
   const { mutateAsync: updateProfile, isPending: isUpdatingProfile } = useUpdateProfile();
   const [isProfileSubmitting, setIsProfileSubmitting] = useState(false);
@@ -97,11 +98,13 @@ export function MyProfileDialog({
   const solveAvatarCaptcha = () =>
     new Promise<string>((resolve, reject) => {
       captchaResolverRef.current = resolve;
-      captchaRef.current?.reset();
+      captchaRejecterRef.current = reject;
+      captchaRef.current?.execute();
 
       window.setTimeout(() => {
         if (captchaResolverRef.current === resolve) {
           captchaResolverRef.current = null;
+          captchaRejecterRef.current = null;
           reject(new Error("Captcha verification timed out"));
         }
       }, 30000);
@@ -510,13 +513,17 @@ export function MyProfileDialog({
 
       <Captcha
         ref={captchaRef}
+        mode="execute"
         action="profile-avatar-upload"
         onVerify={(token) => {
           captchaResolverRef.current?.(token);
           captchaResolverRef.current = null;
+          captchaRejecterRef.current = null;
         }}
         onError={() => {
+          captchaRejecterRef.current?.(new Error("Captcha verification failed"));
           captchaResolverRef.current = null;
+          captchaRejecterRef.current = null;
           toast.error("Captcha verification failed", { id: "profile-captcha-error" });
         }}
       />

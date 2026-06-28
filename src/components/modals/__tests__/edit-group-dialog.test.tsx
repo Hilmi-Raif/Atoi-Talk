@@ -18,6 +18,7 @@ vi.mock("@/components/auth/captcha", async () => {
   return {
     Captcha: React.forwardRef((_props, ref) => {
       React.useImperativeHandle(ref, () => ({
+        execute: vi.fn(),
         reset: vi.fn(),
         getResponse: vi.fn(),
       }));

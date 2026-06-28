@@ -74,7 +74,7 @@ export function EditGroupDialog({ isOpen, onClose, chat }: EditGroupDialogProps)
     new Promise<string>((resolve, reject) => {
       captchaResolverRef.current = resolve;
       captchaRejecterRef.current = reject;
-      captchaRef.current?.reset();
+      captchaRef.current?.execute();
 
       window.setTimeout(() => {
         if (captchaResolverRef.current === resolve) {
@@ -395,6 +395,7 @@ export function EditGroupDialog({ isOpen, onClose, chat }: EditGroupDialogProps)
 
       <Captcha
         ref={captchaRef}
+        mode="execute"
         action="group-avatar-upload"
         onVerify={handleCaptchaVerify}
         onError={handleCaptchaError}

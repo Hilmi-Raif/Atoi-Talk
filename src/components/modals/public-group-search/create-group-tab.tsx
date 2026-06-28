@@ -307,6 +307,7 @@ export const CreateGroupTab = ({ activeTab, form }: CreateGroupTabProps) => {
 
       <Captcha
         ref={captchaRef}
+        mode="execute"
         action="group-avatar-upload"
         onVerify={handleCaptchaVerify}
         onError={handleCaptchaError}
