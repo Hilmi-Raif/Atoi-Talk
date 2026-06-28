@@ -1,5 +1,11 @@
 import api from "@/lib/axios";
-import type { ApiResponse, PaginatedResponse, SearchUsersParams, User } from "@/types";
+import type {
+  ApiResponse,
+  PaginatedResponse,
+  SearchUsersParams,
+  UpdateProfileRequest,
+  User,
+} from "@/types";
 
 /** API calls for user profile, lookup, and block lists */
 export const userService = {
@@ -22,12 +28,8 @@ export const userService = {
   /**
    * Update user profile
    */
-  async updateProfile(data: FormData): Promise<User> {
-    const response = await api.put<ApiResponse<User>>("/api/user/profile", data, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+  async updateProfile(data: UpdateProfileRequest): Promise<User> {
+    const response = await api.put<ApiResponse<User>>("/api/user/profile", data);
     return response.data.data;
   },
 

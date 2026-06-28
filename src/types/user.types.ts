@@ -32,13 +32,13 @@ export interface UserUpdateEventPayload {
 }
 
 /**
- * Update profile request (multipart/form-data)
+ * Update profile request
  */
 export interface UpdateProfileRequest {
   username?: string;
   full_name: string;
   bio?: string;
-  avatar?: File;
+  avatar_media_id?: string;
   delete_avatar?: boolean;
 }
 

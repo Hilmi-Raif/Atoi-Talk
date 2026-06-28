@@ -48,17 +48,19 @@ describe("userService", () => {
   });
 
   describe("updateProfile", () => {
-    it("calls PUT /api/user/profile with FormData headers", async () => {
+    it("calls PUT /api/user/profile with JSON payload", async () => {
       const user = { id: "u1", full_name: "Updated" };
       mockApi.put.mockResolvedValue({ data: { data: user } });
 
-      const formData = new FormData();
-      formData.append("full_name", "Updated");
-      const result = await userService.updateProfile(formData);
+      const payload = {
+        username: "updated",
+        full_name: "Updated",
+        bio: "Hello",
+        avatar_media_id: "media-1",
+      };
+      const result = await userService.updateProfile(payload);
 
-      expect(mockApi.put).toHaveBeenCalledWith("/api/user/profile", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      expect(mockApi.put).toHaveBeenCalledWith("/api/user/profile", payload);
       expect(result).toEqual(user);
     });
   });

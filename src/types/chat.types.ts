@@ -64,6 +64,22 @@ export interface CreatePrivateChatRequest {
   target_user_id: string;
 }
 
+export interface CreateGroupRequest {
+  name: string;
+  description?: string;
+  member_ids: string[];
+  is_public: boolean;
+  avatar_media_id?: string;
+}
+
+export interface UpdateGroupRequest {
+  name: string;
+  description?: string;
+  is_public: boolean;
+  avatar_media_id?: string;
+  delete_avatar?: boolean;
+}
+
 /**
  * Get chats query parameters
  */

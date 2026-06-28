@@ -35,7 +35,7 @@ vi.mock("@/lib/toast", () => ({
 }));
 
 const mockRefetchUser = vi.fn().mockResolvedValue({ isError: false, data: {} });
-const mockUpdateProfile = vi.fn();
+const mockUpdateProfile = vi.fn().mockResolvedValue({});
 const mockChangePassword = vi.fn();
 const mockChangeEmail = vi.fn();
 const mockSendOTP = vi.fn();
@@ -56,7 +56,7 @@ vi.mock("@/hooks/queries", () => ({
     refetch: mockRefetchUser,
   }),
   useUpdateProfile: () => ({
-    mutate: mockUpdateProfile,
+    mutateAsync: mockUpdateProfile,
     isPending: false,
   }),
   useChangePassword: () => ({
@@ -186,8 +186,31 @@ describe("NavFooter Component", () => {
       expect(mockUpdateProfile).toHaveBeenCalled();
     });
 
-    const formData = mockUpdateProfile.mock.calls[0][0];
-    expect(formData.get("full_name")).toBe("Updated Name");
+    expect(mockUpdateProfile.mock.calls[0][0]).toMatchObject({
+      full_name: "Updated Name",
+      username: "testuser",
+      bio: "Test Bio",
+    });
+  });
+
+  it("disables profile fields immediately while submit is pending", async () => {
+    mockUpdateProfile.mockImplementationOnce(() => new Promise(() => {}));
+    const { user } = renderComponent({ activeMenu: "footer-menu" });
+
+    await user.click(screen.getByText("Account"));
+
+    await waitFor(() => expect(screen.getByText("Account Settings")).toBeInTheDocument());
+
+    const nameInput = screen.getByDisplayValue("Test User");
+    fireEvent.change(nameInput, { target: { value: "Updated Name" } });
+
+    const saveButton = screen.getByRole("button", { name: "Save Changes" });
+    fireEvent.click(saveButton);
+
+    await waitFor(() => {
+      expect(nameInput).toBeDisabled();
+    });
+    expect(mockUpdateProfile).toHaveBeenCalled();
   });
 
   it("validates empty name in profile settings", async () => {

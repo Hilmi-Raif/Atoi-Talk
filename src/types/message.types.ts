@@ -18,6 +18,10 @@ export type MessageType =
   | "system_kick"
   | "system_transfer";
 
+export type MediaUsage = "message_attachment" | "user_avatar" | "group_avatar";
+
+export type MediaUploadStatus = "pending" | "completed";
+
 /**
  * Media/Attachment data transfer object
  */
@@ -28,7 +32,25 @@ export interface Media {
   original_name: string;
   mime_type: string;
   file_size: number;
+  category?: MediaUsage;
+  upload_status?: MediaUploadStatus;
   is_deleted?: boolean;
+}
+
+export interface UploadMediaRequest {
+  usage: MediaUsage;
+  original_name: string;
+  file_size: number;
+  mime_type: string;
+  captcha_token: string;
+}
+
+export interface UploadMediaResponse {
+  media: Media;
+  upload_url: string;
+  upload_method: "PUT";
+  upload_headers: Record<string, string>;
+  expires_at: string;
 }
 
 /**

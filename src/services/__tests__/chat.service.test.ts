@@ -92,32 +92,33 @@ describe("chatService", () => {
   });
 
   describe("createGroup", () => {
-    it("calls POST /api/chats/group with FormData headers", async () => {
+    it("calls POST /api/chats/group with JSON payload", async () => {
       const group = { id: "g1", name: "Group" };
       mockApi.post.mockResolvedValue({ data: { data: group } });
 
-      const formData = new FormData();
-      formData.append("name", "Group");
-      const result = await chatService.createGroup(formData);
+      const payload = {
+        name: "Group",
+        description: "Desc",
+        member_ids: ["u1"],
+        is_public: true,
+        avatar_media_id: "media-1",
+      };
+      const result = await chatService.createGroup(payload);
 
-      expect(mockApi.post).toHaveBeenCalledWith("/api/chats/group", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      expect(mockApi.post).toHaveBeenCalledWith("/api/chats/group", payload);
       expect(result).toEqual(group);
     });
   });
 
   describe("updateGroup", () => {
-    it("calls PUT /api/chats/group/:chatId with FormData", async () => {
+    it("calls PUT /api/chats/group/:chatId with JSON payload", async () => {
       const updated = { id: "g1", name: "Updated", chat_id: "c1" };
       mockApi.put.mockResolvedValue({ data: { data: updated } });
 
-      const formData = new FormData();
-      const result = await chatService.updateGroup("c1", formData);
+      const payload = { name: "Updated", description: "Desc", delete_avatar: true };
+      const result = await chatService.updateGroup("c1", payload);
 
-      expect(mockApi.put).toHaveBeenCalledWith("/api/chats/group/c1", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      expect(mockApi.put).toHaveBeenCalledWith("/api/chats/group/c1", payload);
       expect(result).toEqual(updated);
     });
   });

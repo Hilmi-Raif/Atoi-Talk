@@ -1,6 +1,6 @@
 import { userService } from "@/services";
 import { useAuthStore } from "@/store";
-import { User } from "@/types";
+import { UpdateProfileRequest, User } from "@/types";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useCurrentUser() {
@@ -36,7 +36,7 @@ export function useUpdateProfile() {
   const setUser = useAuthStore((state) => state.setUser);
 
   return useMutation({
-    mutationFn: (data: FormData) => userService.updateProfile(data),
+    mutationFn: (data: UpdateProfileRequest) => userService.updateProfile(data),
     onSuccess: (updatedUser) => {
       setUser(updatedUser);
       queryClient.setQueryData(["user", "current"], updatedUser);

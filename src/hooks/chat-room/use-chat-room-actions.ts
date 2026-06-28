@@ -4,7 +4,7 @@ import { useUploadMedia } from "@/hooks/mutations/use-upload-media";
 import { useCreatePrivateChat, useDeleteMessage, useSendMessage } from "@/hooks/queries";
 import { debugLog } from "@/lib/logger";
 import { toast } from "@/lib/toast";
-import { EditMessageRequest, Media, Message, MessageType } from "@/types";
+import { EditMessageRequest, Media, MediaUsage, Message, MessageType } from "@/types";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -50,7 +50,7 @@ export const useChatActions = ({
 
   const { mutateAsync: uploadMediaMutation, isPending: isUploadingState } = useUploadMedia();
   const uploadMedia = useCallback(
-    (variables: { file: File; captchaToken: string; signal?: AbortSignal }) =>
+    (variables: { file: File; usage: MediaUsage; captchaToken: string; signal?: AbortSignal }) =>
       uploadMediaMutation(variables),
     [uploadMediaMutation]
   );

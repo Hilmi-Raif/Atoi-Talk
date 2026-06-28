@@ -6,10 +6,12 @@ import { useChatStore } from "@/store";
 import {
   ChatListItem,
   ChatResponse,
+  CreateGroupRequest,
   GroupMember,
   Message,
   PaginatedResponse,
   PublicGroupDTO,
+  UpdateGroupRequest,
 } from "@/types";
 import { InfiniteData, useMutation, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
@@ -18,7 +20,7 @@ export const useCreateGroup = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: FormData) => chatService.createGroup(data),
+    mutationFn: (data: CreateGroupRequest) => chatService.createGroup(data),
     onSuccess: (newGroup: ChatResponse) => {
       queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
         { queryKey: ["chats"] },
@@ -77,7 +79,7 @@ export const useUpdateGroup = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ groupId, data }: { groupId: string; data: FormData }) =>
+    mutationFn: ({ groupId, data }: { groupId: string; data: UpdateGroupRequest }) =>
       chatService.updateGroup(groupId, data),
     onSuccess: (updatedGroup: ChatListItem, { groupId }) => {
       queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(

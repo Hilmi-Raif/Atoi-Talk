@@ -1,6 +1,9 @@
+import { CaptchaHandle } from "@/components/auth/captcha";
 import { useCreateGroup } from "@/hooks/mutations/use-group";
+import { errorLog } from "@/lib/logger";
 import { toast } from "@/lib/toast";
 import { groupDescriptionSchema, groupNameSchema } from "@/lib/validators";
+import { mediaService } from "@/services/media.service";
 import { User } from "@/types";
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -18,7 +21,7 @@ type GroupErrors = {
 
 export const useCreateGroupForm = (onClose: (open: boolean) => void) => {
   const navigate = useNavigate();
-  const { mutate: createGroup } = useCreateGroup();
+  const { mutateAsync: createGroup } = useCreateGroup();
 
   const [groupName, setGroupName] = useState("");
   const [groupDescription, setGroupDescription] = useState("");
@@ -33,6 +36,24 @@ export const useCreateGroupForm = (onClose: (open: boolean) => void) => {
   const [originalFilename, setOriginalFilename] = useState<string | null>(null);
 
   const groupAvatarInputRef = useRef<HTMLInputElement>(null);
+  const captchaRef = useRef<CaptchaHandle>(null);
+  const captchaResolverRef = useRef<((token: string) => void) | null>(null);
+  const captchaRejecterRef = useRef<((error: Error) => void) | null>(null);
+
+  const solveGroupAvatarCaptcha = () =>
+    new Promise<string>((resolve, reject) => {
+      captchaResolverRef.current = resolve;
+      captchaRejecterRef.current = reject;
+      captchaRef.current?.reset();
+
+      window.setTimeout(() => {
+        if (captchaResolverRef.current === resolve) {
+          captchaResolverRef.current = null;
+          captchaRejecterRef.current = null;
+          reject(new Error("Captcha verification timed out"));
+        }
+      }, 30000);
+    });
 
   const resetGroupForm = () => {
     if (groupAvatarPreview?.startsWith("blob:")) {
@@ -52,8 +73,8 @@ export const useCreateGroupForm = (onClose: (open: boolean) => void) => {
     if (e.target.files?.[0]) {
       const file = e.target.files[0];
 
-      const allowedMimes = ["image/png", "image/jpeg", "image/pjpeg", "image/apng"];
-      const allowedExts = [".png", ".jpg", ".jpeg", ".jpe", ".jfif", ".jif", ".jfi"];
+      const allowedMimes = ["image/png", "image/jpeg", "image/webp"];
+      const allowedExts = [".png", ".jpg", ".jpeg", ".webp"];
       const fileExt = "." + file.name.split(".").pop()?.toLowerCase();
 
       const isMimeValid = allowedMimes.includes(file.type);
@@ -87,7 +108,10 @@ export const useCreateGroupForm = (onClose: (open: boolean) => void) => {
       URL.revokeObjectURL(groupAvatarPreview);
     }
     const previewUrl = URL.createObjectURL(blob);
-    setGroupAvatar(blob as File);
+    const avatarFile = new File([blob], originalFilename || "avatar.jpg", {
+      type: blob.type || "image/jpeg",
+    });
+    setGroupAvatar(avatarFile);
     setGroupAvatarPreview(previewUrl);
     setCropModalOpen(false);
   };
@@ -113,7 +137,7 @@ export const useCreateGroupForm = (onClose: (open: boolean) => void) => {
     }
   };
 
-  const handleCreateGroup = () => {
+  const handleCreateGroup = async () => {
     const result = groupSchema.safeParse({
       name: groupName.trim(),
       description: groupDescription.trim() || undefined,
@@ -139,29 +163,50 @@ export const useCreateGroupForm = (onClose: (open: boolean) => void) => {
     setGroupErrors({});
     setIsCreatingGroup(true);
 
-    const formData = new FormData();
-    formData.append("name", groupName.trim());
-    if (groupDescription.trim()) {
-      formData.append("description", groupDescription.trim());
-    }
-    if (groupAvatar) {
-      const filename = originalFilename || "avatar.jpg";
-      formData.append("avatar", groupAvatar, filename);
-    }
     const memberIds = selectedMembers.map((member) => member.id);
-    formData.append("member_ids", JSON.stringify(memberIds));
-    formData.append("is_public", isPublic.toString());
 
-    createGroup(formData, {
-      onSuccess: (newGroup) => {
-        navigate(`/chat/${newGroup.id}`);
-        onClose(false);
-        resetGroupForm();
-      },
-      onSettled: () => {
-        setIsCreatingGroup(false);
-      },
-    });
+    try {
+      let avatarMediaId: string | undefined;
+
+      if (groupAvatar) {
+        const captchaToken = await solveGroupAvatarCaptcha();
+        const media = await mediaService.uploadDirectMedia(groupAvatar, {
+          usage: "group_avatar",
+          captchaToken,
+        });
+        avatarMediaId = media.id;
+      }
+
+      const newGroup = await createGroup({
+        name: groupName.trim(),
+        ...(groupDescription.trim() ? { description: groupDescription.trim() } : {}),
+        member_ids: memberIds,
+        is_public: isPublic,
+        ...(avatarMediaId ? { avatar_media_id: avatarMediaId } : {}),
+      });
+
+      navigate(`/chat/${newGroup.id}`);
+      onClose(false);
+      resetGroupForm();
+    } catch (error) {
+      errorLog("Failed to create group:", error);
+      toast.error("Failed to create group");
+    } finally {
+      setIsCreatingGroup(false);
+    }
+  };
+
+  const handleCaptchaVerify = (token: string) => {
+    captchaResolverRef.current?.(token);
+    captchaResolverRef.current = null;
+    captchaRejecterRef.current = null;
+  };
+
+  const handleCaptchaError = () => {
+    captchaRejecterRef.current?.(new Error("Captcha verification failed"));
+    captchaResolverRef.current = null;
+    captchaRejecterRef.current = null;
+    toast.error("Captcha verification failed", { id: "group-captcha-error" });
   };
 
   return {
@@ -182,10 +227,13 @@ export const useCreateGroupForm = (onClose: (open: boolean) => void) => {
     selectedImage,
     setSelectedImage,
     groupAvatarInputRef,
+    captchaRef,
     resetGroupForm,
     handleGroupAvatarChange,
     handleCropComplete,
     handleDeleteGroupAvatar,
+    handleCaptchaVerify,
+    handleCaptchaError,
     validateGroupField,
     handleCreateGroup,
   };

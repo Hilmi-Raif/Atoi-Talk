@@ -3,12 +3,14 @@ import type {
   ApiResponse,
   ChatListItem,
   ChatResponse,
+  CreateGroupRequest,
   CreatePrivateChatRequest,
   GetChatsParams,
   GroupMember,
   Message,
   PaginatedResponse,
   PublicGroupDTO,
+  UpdateGroupRequest,
 } from "@/types";
 
 /** API calls for chats, groups, and member management */
@@ -60,20 +62,16 @@ export const chatService = {
   /**
    * Create a new group chat
    */
-  async createGroup(data: FormData): Promise<ChatResponse> {
-    const response = await api.post<ApiResponse<ChatResponse>>("/api/chats/group", data, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+  async createGroup(data: CreateGroupRequest): Promise<ChatResponse> {
+    const response = await api.post<ApiResponse<ChatResponse>>("/api/chats/group", data);
     return response.data.data;
   },
 
   /**
    * Update group info
    */
-  async updateGroup(chatId: string, data: FormData): Promise<ChatListItem> {
-    const response = await api.put<ApiResponse<ChatListItem>>(`/api/chats/group/${chatId}`, data, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+  async updateGroup(chatId: string, data: UpdateGroupRequest): Promise<ChatListItem> {
+    const response = await api.put<ApiResponse<ChatListItem>>(`/api/chats/group/${chatId}`, data);
     return response.data.data;
   },
 

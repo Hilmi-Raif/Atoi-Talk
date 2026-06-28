@@ -1,3 +1,4 @@
+import { Captcha } from "@/components/auth/captcha";
 import { ImageCropper } from "@/components/image-cropper";
 import { UserSelectionDialog } from "@/components/modals/user-selection-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -57,9 +58,12 @@ export const CreateGroupTab = ({ activeTab, form }: CreateGroupTabProps) => {
     selectedImage,
     setSelectedImage,
     groupAvatarInputRef,
+    captchaRef,
     handleGroupAvatarChange,
     handleCropComplete,
     handleDeleteGroupAvatar,
+    handleCaptchaVerify,
+    handleCaptchaError,
     validateGroupField,
     handleCreateGroup,
   } = form;
@@ -150,7 +154,7 @@ export const CreateGroupTab = ({ activeTab, form }: CreateGroupTabProps) => {
               ref={groupAvatarInputRef}
               type="file"
               className="hidden"
-              accept="image/png,image/jpeg,image/pjpeg,image/apng,.png,.jpg,.jpeg,.jpe,.jfif,.jif,.jfi"
+              accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
               onChange={handleGroupAvatarChange}
             />
           </div>
@@ -299,6 +303,13 @@ export const CreateGroupTab = ({ activeTab, form }: CreateGroupTabProps) => {
         title="Add Members to Group"
         existingMemberIds={selectedMembers.map((m) => m.id)}
         confirmLabel="Add Selected"
+      />
+
+      <Captcha
+        ref={captchaRef}
+        action="group-avatar-upload"
+        onVerify={handleCaptchaVerify}
+        onError={handleCaptchaError}
       />
     </TabsContent>
   );

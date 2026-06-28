@@ -1,18 +1,21 @@
 import { errorLog } from "@/lib/logger";
 import { mediaService } from "@/services/media.service";
+import type { MediaUsage } from "@/types";
 import { useMutation } from "@tanstack/react-query";
 
 export const useUploadMedia = () => {
   return useMutation({
     mutationFn: ({
       file,
+      usage,
       captchaToken,
       signal,
     }: {
       file: File;
+      usage: MediaUsage;
       captchaToken: string;
       signal?: AbortSignal;
-    }) => mediaService.uploadMedia(file, captchaToken, signal),
+    }) => mediaService.uploadDirectMedia(file, { usage, captchaToken, signal }),
     onError: (error) => {
       if (
         error.name === "Aborted" ||

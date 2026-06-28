@@ -1,3 +1,4 @@
+import { Captcha, CaptchaHandle } from "@/components/auth/captcha";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -15,9 +16,11 @@ import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { useUpdateProfile } from "@/hooks/queries";
 import { getInitials } from "@/lib/avatar-utils";
+import { errorLog } from "@/lib/logger";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { bioSchema, nameSchema, usernameSchema } from "@/lib/validators";
+import { mediaService } from "@/services/media.service";
 import { ApiError, User } from "@/types";
 import { AxiosError } from "axios";
 import { Camera, Eye, Trash2 } from "lucide-react";
@@ -84,9 +87,25 @@ export function MyProfileDialog({
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [originalFilename, setOriginalFilename] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const captchaRef = useRef<CaptchaHandle>(null);
+  const captchaResolverRef = useRef<((token: string) => void) | null>(null);
 
-  const { mutate: updateProfile, isPending: isUpdatingProfile } = useUpdateProfile();
+  const { mutateAsync: updateProfile, isPending: isUpdatingProfile } = useUpdateProfile();
   const [isProfileSubmitting, setIsProfileSubmitting] = useState(false);
+  const isSubmitting = isProfileSubmitting || isUpdatingProfile;
+
+  const solveAvatarCaptcha = () =>
+    new Promise<string>((resolve, reject) => {
+      captchaResolverRef.current = resolve;
+      captchaRef.current?.reset();
+
+      window.setTimeout(() => {
+        if (captchaResolverRef.current === resolve) {
+          captchaResolverRef.current = null;
+          reject(new Error("Captcha verification timed out"));
+        }
+      }, 30000);
+    });
 
   const validateField = (field: keyof ProfileErrors, value: string) => {
     const fieldSchema = {
@@ -110,7 +129,7 @@ export function MyProfileDialog({
     !!accountData.avatarFile ||
     (accountData.deleteAvatar && !!user.avatar);
 
-  const handleUpdateProfile = () => {
+  const handleUpdateProfile = async () => {
     const result = profileSchema.safeParse({
       username: accountData.username.trim(),
       name: accountData.name.trim(),
@@ -131,41 +150,47 @@ export function MyProfileDialog({
 
     setProfileErrors({});
 
-    const formData = new FormData();
-    formData.append("username", accountData.username.trim());
-    formData.append("full_name", accountData.name.trim());
-    formData.append("bio", (accountData.bio || "").trim());
-    if (accountData.avatarFile) {
-      const filename = originalFilename || "avatar.jpg";
-      formData.append("avatar", accountData.avatarFile, filename);
-    }
-    if (accountData.deleteAvatar) {
-      formData.append("delete_avatar", "true");
-    }
-
     setIsProfileSubmitting(true);
-    updateProfile(formData, {
-      onSuccess: () => {
-        toast.success("Profile updated successfully", { id: "profile-update-success" });
-        onOpenChange(false);
-        setIsProfileSubmitting(false);
-      },
-      onError: (error) => {
-        setIsProfileSubmitting(false);
-        const axiosError = error as AxiosError<ApiError>;
-        toast.error(axiosError.response?.data?.error || "Profile update failed", {
-          id: "profile-update-error",
+
+    try {
+      let avatarMediaId: string | undefined;
+
+      if (accountData.avatarFile && !accountData.deleteAvatar) {
+        const captchaToken = await solveAvatarCaptcha();
+        const media = await mediaService.uploadDirectMedia(accountData.avatarFile, {
+          usage: "user_avatar",
+          captchaToken,
         });
-      },
-    });
+        avatarMediaId = media.id;
+      }
+
+      await updateProfile({
+        username: accountData.username.trim(),
+        full_name: accountData.name.trim(),
+        bio: (accountData.bio || "").trim(),
+        ...(avatarMediaId ? { avatar_media_id: avatarMediaId } : {}),
+        ...(accountData.deleteAvatar ? { delete_avatar: true } : {}),
+      });
+
+      toast.success("Profile updated successfully", { id: "profile-update-success" });
+      onOpenChange(false);
+    } catch (error) {
+      errorLog("Profile update failed", error);
+      const axiosError = error as AxiosError<ApiError>;
+      toast.error(axiosError.response?.data?.error || "Profile update failed", {
+        id: "profile-update-error",
+      });
+    } finally {
+      setIsProfileSubmitting(false);
+    }
   };
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
       const file = e.target.files[0];
 
-      const allowedMimes = ["image/png", "image/jpeg", "image/pjpeg", "image/apng"];
-      const allowedExts = [".png", ".jpg", ".jpeg", ".jpe", ".jfif", ".jif", ".jfi"];
+      const allowedMimes = ["image/png", "image/jpeg", "image/webp"];
+      const allowedExts = [".png", ".jpg", ".jpeg", ".webp"];
       const fileExt = "." + file.name.split(".").pop()?.toLowerCase();
 
       const isMimeValid = allowedMimes.includes(file.type);
@@ -197,9 +222,12 @@ export function MyProfileDialog({
       URL.revokeObjectURL(accountData.avatarPreview);
     }
     const previewUrl = URL.createObjectURL(blob);
+    const avatarFile = new File([blob], originalFilename || "avatar.jpg", {
+      type: blob.type || "image/jpeg",
+    });
     setAccountData((prev) => ({
       ...prev,
-      avatarFile: blob as File,
+      avatarFile,
       avatarPreview: previewUrl,
       deleteAvatar: false,
     }));
@@ -220,14 +248,14 @@ export function MyProfileDialog({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={(val) => !isUpdatingProfile && onOpenChange(val)}>
+      <Dialog open={open} onOpenChange={(val) => !isSubmitting && onOpenChange(val)}>
         <DialogContent
           size="default"
           onInteractOutside={(e) =>
-            (isLightboxOpen || isUpdatingProfile || cropModalOpen) && e.preventDefault()
+            (isLightboxOpen || isSubmitting || cropModalOpen) && e.preventDefault()
           }
           onEscapeKeyDown={(e) => {
-            if (isUpdatingProfile || cropModalOpen) {
+            if (isSubmitting || cropModalOpen) {
               e.preventDefault();
             }
           }}
@@ -242,7 +270,7 @@ export function MyProfileDialog({
                   <div
                     className={cn(
                       "relative group cursor-pointer",
-                      isUpdatingProfile && "pointer-events-none opacity-50"
+                      isSubmitting && "pointer-events-none opacity-50"
                     )}
                   >
                     <Avatar className="h-24 w-24">
@@ -293,7 +321,7 @@ export function MyProfileDialog({
                 ref={fileInputRef}
                 type="file"
                 className="hidden"
-                accept="image/png,image/jpeg,image/pjpeg,image/apng,.png,.jpg,.jpeg,.jpe,.jfif,.jif,.jfi"
+                accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
                 onChange={handleAvatarChange}
               />
             </div>
@@ -311,7 +339,7 @@ export function MyProfileDialog({
                   "mt-3",
                   profileErrors.username && "border-destructive focus-visible:ring-destructive"
                 )}
-                disabled={isUpdatingProfile}
+                disabled={isSubmitting}
                 onChange={(e) => {
                   const normalized = e.target.value.toLowerCase().replace(/[^a-z0-9]/g, "");
                   setAccountData({ ...accountData, username: normalized });
@@ -340,7 +368,7 @@ export function MyProfileDialog({
               <Input
                 id="name"
                 value={accountData.name}
-                disabled={isUpdatingProfile}
+                disabled={isSubmitting}
                 className={cn(
                   "mt-3",
                   profileErrors.name && "border-destructive focus-visible:ring-destructive"
@@ -372,7 +400,7 @@ export function MyProfileDialog({
                 <Button
                   variant="outline"
                   size="icon"
-                  disabled={!user.has_password || isUpdatingProfile}
+                  disabled={!user.has_password || isSubmitting}
                   onClick={() => {
                     onOpenChangeEmail();
                   }}
@@ -424,7 +452,7 @@ export function MyProfileDialog({
                   profileErrors.bio && "border-destructive focus-visible:ring-destructive"
                 )}
                 value={accountData.bio}
-                disabled={isUpdatingProfile}
+                disabled={isSubmitting}
                 onChange={(e) => {
                   setAccountData({ ...accountData, bio: e.target.value });
                   validateField("bio", e.target.value);
@@ -447,11 +475,11 @@ export function MyProfileDialog({
             </div>
             <Button
               onClick={handleUpdateProfile}
-              disabled={isProfileSubmitting || !hasChanges}
+              disabled={isSubmitting || !hasChanges}
               className="relative"
             >
-              <span className={isProfileSubmitting ? "opacity-0" : ""}>Save Changes</span>
-              {isProfileSubmitting && (
+              <span className={isSubmitting ? "opacity-0" : ""}>Save Changes</span>
+              {isSubmitting && (
                 <div className="absolute inset-0 flex items-center justify-center">
                   <Spinner className="h-4 w-4" />
                 </div>
@@ -478,6 +506,19 @@ export function MyProfileDialog({
             ? [{ src: accountData.avatarPreview, alt: "Avatar Preview" }]
             : []
         }
+      />
+
+      <Captcha
+        ref={captchaRef}
+        action="profile-avatar-upload"
+        onVerify={(token) => {
+          captchaResolverRef.current?.(token);
+          captchaResolverRef.current = null;
+        }}
+        onError={() => {
+          captchaResolverRef.current = null;
+          toast.error("Captcha verification failed", { id: "profile-captcha-error" });
+        }}
       />
     </>
   );

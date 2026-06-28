@@ -1,12 +1,13 @@
 import { CaptchaHandle } from "@/components/auth/captcha";
 import { debugLog, errorLog } from "@/lib/logger";
 import { toast } from "@/lib/toast";
-import { Media } from "@/types";
+import { Media, MediaUsage } from "@/types";
 import React, { useRef, useState } from "react";
 
 interface UseChatUploadProps {
   uploadMedia: (variables: {
     file: File;
+    usage: MediaUsage;
     captchaToken: string;
     signal?: AbortSignal;
   }) => Promise<Media>;
@@ -86,7 +87,12 @@ export function useChatUpload({ uploadMedia, setAttachments, attachments }: UseC
     const signal = abortControllerRef.current.signal;
 
     try {
-      const media = await uploadMedia({ file, captchaToken: token, signal });
+      const media = await uploadMedia({
+        file,
+        usage: "message_attachment",
+        captchaToken: token,
+        signal,
+      });
 
       if (!signal.aborted) {
         setAttachments((prev) => [...prev, media]);

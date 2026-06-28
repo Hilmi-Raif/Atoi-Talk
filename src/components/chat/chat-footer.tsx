@@ -10,7 +10,15 @@ import { useRefreshMedia } from "@/hooks/mutations/use-refresh-media";
 import { useUserById } from "@/hooks/queries";
 import { errorLog } from "@/lib/logger";
 import { useUIStore } from "@/store";
-import { ChatListItem, EditMessage, EditMessageRequest, Media, Message, User } from "@/types";
+import {
+  ChatListItem,
+  EditMessage,
+  EditMessageRequest,
+  Media,
+  MediaUsage,
+  Message,
+  User,
+} from "@/types";
 import * as React from "react";
 
 interface ChatFooterProps {
@@ -43,6 +51,7 @@ interface ChatFooterProps {
   isEditing: boolean;
   uploadMedia: (variables: {
     file: File;
+    usage: MediaUsage;
     captchaToken: string;
     signal?: AbortSignal;
   }) => Promise<Media>;

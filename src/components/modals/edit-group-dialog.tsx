@@ -1,3 +1,4 @@
+import { Captcha, CaptchaHandle } from "@/components/auth/captcha";
 import { ImageCropper } from "@/components/image-cropper";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -16,9 +17,11 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useUpdateGroup } from "@/hooks/mutations/use-group";
 import { getInitials } from "@/lib/avatar-utils";
+import { errorLog } from "@/lib/logger";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { groupDescriptionSchema, groupNameSchema } from "@/lib/validators";
+import { mediaService } from "@/services/media.service";
 import { ChatListItem } from "@/types";
 import { Camera, Trash2, Users } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
@@ -58,9 +61,29 @@ export function EditGroupDialog({ isOpen, onClose, chat }: EditGroupDialogProps)
   const [originalFilename, setOriginalFilename] = useState<string | null>(null);
   const [isPublic, setIsPublic] = useState(chat.is_public || false);
   const [removeAvatar, setRemoveAvatar] = useState(false);
+  const [isGroupSubmitting, setIsGroupSubmitting] = useState(false);
   const groupAvatarInputRef = useRef<HTMLInputElement>(null);
+  const captchaRef = useRef<CaptchaHandle>(null);
+  const captchaResolverRef = useRef<((token: string) => void) | null>(null);
+  const captchaRejecterRef = useRef<((error: Error) => void) | null>(null);
 
-  const { mutate: updateGroup, isPending: isUpdating } = useUpdateGroup();
+  const { mutateAsync: updateGroup, isPending: isUpdating } = useUpdateGroup();
+  const isSubmitting = isGroupSubmitting || isUpdating;
+
+  const solveGroupAvatarCaptcha = () =>
+    new Promise<string>((resolve, reject) => {
+      captchaResolverRef.current = resolve;
+      captchaRejecterRef.current = reject;
+      captchaRef.current?.reset();
+
+      window.setTimeout(() => {
+        if (captchaResolverRef.current === resolve) {
+          captchaResolverRef.current = null;
+          captchaRejecterRef.current = null;
+          reject(new Error("Captcha verification timed out"));
+        }
+      }, 30000);
+    });
 
   useEffect(() => {
     if (isOpen) {
@@ -71,6 +94,7 @@ export function EditGroupDialog({ isOpen, onClose, chat }: EditGroupDialogProps)
       setGroupErrors({});
       setIsPublic(chat.is_public || false);
       setRemoveAvatar(false);
+      setIsGroupSubmitting(false);
     }
   }, [isOpen, chat]);
 
@@ -85,8 +109,8 @@ export function EditGroupDialog({ isOpen, onClose, chat }: EditGroupDialogProps)
     if (e.target.files?.[0]) {
       const file = e.target.files[0];
 
-      const allowedMimes = ["image/png", "image/jpeg", "image/pjpeg", "image/apng"];
-      const allowedExts = [".png", ".jpg", ".jpeg", ".jpe", ".jfif", ".jif", ".jfi"];
+      const allowedMimes = ["image/png", "image/jpeg", "image/webp"];
+      const allowedExts = [".png", ".jpg", ".jpeg", ".webp"];
       const fileExt = "." + file.name.split(".").pop()?.toLowerCase();
 
       const isMimeValid = allowedMimes.includes(file.type);
@@ -118,7 +142,10 @@ export function EditGroupDialog({ isOpen, onClose, chat }: EditGroupDialogProps)
       URL.revokeObjectURL(groupAvatarPreview);
     }
     const previewUrl = URL.createObjectURL(blob);
-    setGroupAvatar(blob as File);
+    const avatarFile = new File([blob], originalFilename || "avatar.jpg", {
+      type: blob.type || "image/jpeg",
+    });
+    setGroupAvatar(avatarFile);
     setGroupAvatarPreview(previewUrl);
     setRemoveAvatar(false);
     setCropModalOpen(false);
@@ -143,7 +170,7 @@ export function EditGroupDialog({ isOpen, onClose, chat }: EditGroupDialogProps)
     }
   };
 
-  const handleSaveGroup = () => {
+  const handleSaveGroup = async () => {
     const result = groupSchema.safeParse({
       name: (groupName || "").trim(),
       description: groupDescription.trim() || undefined,
@@ -162,40 +189,61 @@ export function EditGroupDialog({ isOpen, onClose, chat }: EditGroupDialogProps)
     }
 
     setGroupErrors({});
+    setIsGroupSubmitting(true);
 
-    const formData = new FormData();
-    formData.append("name", (groupName || "").trim());
-    formData.append("description", groupDescription.trim());
-    formData.append("is_public", isPublic.toString());
+    try {
+      let avatarMediaId: string | undefined;
 
-    if (groupAvatar) {
-      const filename = originalFilename || "avatar.jpg";
-      formData.append("avatar", groupAvatar, filename);
-    }
-
-    if (removeAvatar) {
-      formData.append("delete_avatar", "true");
-    }
-
-    updateGroup(
-      { groupId: chat.id, data: formData },
-      {
-        onSuccess: () => {
-          onClose(false);
-        },
+      if (groupAvatar && !removeAvatar) {
+        const captchaToken = await solveGroupAvatarCaptcha();
+        const media = await mediaService.uploadDirectMedia(groupAvatar, {
+          usage: "group_avatar",
+          captchaToken,
+        });
+        avatarMediaId = media.id;
       }
-    );
+
+      await updateGroup({
+        groupId: chat.id,
+        data: {
+          name: (groupName || "").trim(),
+          ...(groupDescription.trim() ? { description: groupDescription.trim() } : {}),
+          is_public: isPublic,
+          ...(avatarMediaId ? { avatar_media_id: avatarMediaId } : {}),
+          ...(removeAvatar ? { delete_avatar: true } : {}),
+        },
+      });
+      onClose(false);
+    } catch (error) {
+      errorLog("Failed to update group:", error);
+      toast.error("Failed to update group");
+    } finally {
+      setIsGroupSubmitting(false);
+    }
+  };
+
+  const handleCaptchaVerify = (token: string) => {
+    captchaResolverRef.current?.(token);
+    captchaResolverRef.current = null;
+    captchaRejecterRef.current = null;
+  };
+
+  const handleCaptchaError = () => {
+    captchaRejecterRef.current?.(new Error("Captcha verification failed"));
+    captchaResolverRef.current = null;
+    captchaRejecterRef.current = null;
+    toast.error("Captcha verification failed", { id: "group-captcha-error" });
   };
 
   const initials = getInitials(chat.name);
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={(val) => !isUpdating && onClose(val)}>
+      <Dialog open={isOpen} onOpenChange={(val) => !isSubmitting && onClose(val)}>
         <DialogContent
           size="default"
-          onInteractOutside={(e) => (cropModalOpen || isUpdating) && e.preventDefault()}
-          onEscapeKeyDown={(e) => (cropModalOpen || isUpdating) && e.preventDefault()}
+          onInteractOutside={(e) => (cropModalOpen || isSubmitting) && e.preventDefault()}
+          onEscapeKeyDown={(e) => (cropModalOpen || isSubmitting) && e.preventDefault()}
         >
           <DialogHeader>
             <DialogTitle>Edit Group</DialogTitle>
@@ -208,7 +256,7 @@ export function EditGroupDialog({ isOpen, onClose, chat }: EditGroupDialogProps)
                   <div
                     className={cn(
                       "relative group cursor-pointer",
-                      isUpdating && "pointer-events-none opacity-50"
+                      isSubmitting && "pointer-events-none opacity-50"
                     )}
                   >
                     <Avatar className="h-24 w-24">
@@ -245,7 +293,7 @@ export function EditGroupDialog({ isOpen, onClose, chat }: EditGroupDialogProps)
                 ref={groupAvatarInputRef}
                 type="file"
                 className="hidden"
-                accept="image/png,image/jpeg,image/pjpeg,image/apng,.png,.jpg,.jpeg,.jpe,.jfif,.jif,.jfi"
+                accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
                 onChange={handleGroupAvatarChange}
               />
             </div>
@@ -261,7 +309,7 @@ export function EditGroupDialog({ isOpen, onClose, chat }: EditGroupDialogProps)
                   setGroupName(e.target.value);
                   validateGroupField("name", e.target.value);
                 }}
-                disabled={isUpdating}
+                disabled={isSubmitting}
               />
               <AnimatePresence mode="wait">
                 {groupErrors.name && (
@@ -290,7 +338,7 @@ export function EditGroupDialog({ isOpen, onClose, chat }: EditGroupDialogProps)
                   setGroupDescription(e.target.value);
                   validateGroupField("description", e.target.value);
                 }}
-                disabled={isUpdating}
+                disabled={isSubmitting}
               />
               <AnimatePresence mode="wait">
                 {groupErrors.description && (
@@ -313,22 +361,22 @@ export function EditGroupDialog({ isOpen, onClose, chat }: EditGroupDialogProps)
                 <Label>Public Group</Label>
                 <span className="text-xs text-muted-foreground">Anyone can find and join</span>
               </div>
-              <Switch checked={isPublic} onCheckedChange={setIsPublic} disabled={isUpdating} />
+              <Switch checked={isPublic} onCheckedChange={setIsPublic} disabled={isSubmitting} />
             </div>
 
             <Button
               className="w-full relative"
               onClick={handleSaveGroup}
               disabled={
-                isUpdating ||
+                isSubmitting ||
                 !(groupName || "").trim() ||
                 !hasChanges ||
                 !!groupErrors.name ||
                 !!groupErrors.description
               }
             >
-              <span className={isUpdating ? "opacity-0" : ""}>Save Changes</span>
-              {isUpdating && (
+              <span className={isSubmitting ? "opacity-0" : ""}>Save Changes</span>
+              {isSubmitting && (
                 <div className="absolute inset-0 flex items-center justify-center">
                   <Spinner className="h-4 w-4" />
                 </div>
@@ -343,6 +391,13 @@ export function EditGroupDialog({ isOpen, onClose, chat }: EditGroupDialogProps)
         onOpenChange={setCropModalOpen}
         image={selectedImage || ""}
         onCropComplete={handleCropComplete}
+      />
+
+      <Captcha
+        ref={captchaRef}
+        action="group-avatar-upload"
+        onVerify={handleCaptchaVerify}
+        onError={handleCaptchaError}
       />
     </>
   );
