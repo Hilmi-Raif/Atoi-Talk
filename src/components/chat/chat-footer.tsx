@@ -127,6 +127,11 @@ const ChatFooter = ({
   const isDeleted = chat?.type === "private" && chat?.other_user_is_deleted;
   const isBanned =
     (chat?.type === "private" && chat?.other_user_is_banned) || partnerProfile?.is_banned;
+  const keptEditAttachments = editMessage?.attachments?.filter((item) => !item.delete) || [];
+  const hasEffectiveAttachments = editMessage
+    ? keptEditAttachments.length > 0 || attachments.length > 0
+    : attachments.length > 0 || attachmentMode;
+  const canSubmitMessage = newMessageText.trim().length > 0 || hasEffectiveAttachments;
 
   const { sendTyping } = useWebSocketContext();
   const { mutateAsync: refreshMedia } = useRefreshMedia(chat?.id ?? "");
@@ -296,6 +301,7 @@ const ChatFooter = ({
           finalReplySenderName={finalReplySenderName}
           isGlobalUploading={isGlobalUploading}
           isSending={isSending}
+          isEditing={isEditing}
           isLoading={isLoading}
           textareaRef={textareaRef}
           onCancelReply={() => setReplyTo(null)}
@@ -351,6 +357,7 @@ const ChatFooter = ({
           isEditing={!!isEditing}
           isLoading={isLoading}
           attachmentMode={attachmentMode}
+          canSubmitMessage={canSubmitMessage}
           onAttachmentModeChange={(mode) => {
             setAttachmentMode(mode);
             if (mode) {

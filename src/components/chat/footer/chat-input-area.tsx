@@ -18,6 +18,7 @@ interface ChatInputAreaProps {
   isEditing: boolean;
   isLoading?: boolean;
   attachmentMode: boolean;
+  canSubmitMessage: boolean;
   onAttachmentModeChange: (mode: boolean) => void;
   isEmojiOpen: boolean;
   onEmojiOpenChange: (open: boolean) => void;
@@ -35,6 +36,7 @@ export function ChatInputArea({
   isEditing,
   isLoading,
   attachmentMode,
+  canSubmitMessage,
   onAttachmentModeChange,
   isEmojiOpen,
   onEmojiOpenChange,
@@ -118,7 +120,7 @@ export function ChatInputArea({
 
       <Button
         size="icon"
-        disabled={disabled || (!newMessageText.trim() && !attachmentMode)}
+        disabled={disabled || !canSubmitMessage}
         className="size-9 rounded-full shrink-0"
         aria-label={isSending ? "Sending message" : "Send message"}
         onClick={onSendMessage}

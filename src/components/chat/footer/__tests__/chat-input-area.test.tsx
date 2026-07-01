@@ -28,6 +28,7 @@ const createProps = () => ({
   isEditing: false,
   isLoading: false,
   attachmentMode: false,
+  canSubmitMessage: true,
   onAttachmentModeChange: vi.fn(),
   isEmojiOpen: false,
   onEmojiOpenChange: vi.fn(),
@@ -84,5 +85,15 @@ describe("ChatInputArea", () => {
 
     expect(screen.getByRole("button", { name: "Sending message" })).toBeDisabled();
     expect(screen.getByRole("status", { name: "Loading" })).toBeInTheDocument();
+  });
+
+  it("disables send button when edit draft has no effective content", () => {
+    renderComponent({
+      attachmentMode: true,
+      canSubmitMessage: false,
+      newMessageText: "",
+    });
+
+    expect(screen.getByRole("button", { name: "Send message" })).toBeDisabled();
   });
 });

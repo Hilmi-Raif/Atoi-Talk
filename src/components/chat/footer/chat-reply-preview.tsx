@@ -12,6 +12,7 @@ interface ChatReplyPreviewProps {
   finalReplySenderName: string;
   isGlobalUploading?: boolean;
   isSending?: boolean;
+  isEditing?: boolean;
   isLoading?: boolean;
   onCancelReply: () => void;
   onCancelEdit: () => void;
@@ -25,6 +26,7 @@ export function ChatReplyPreview({
   finalReplySenderName,
   isGlobalUploading,
   isSending,
+  isEditing,
   isLoading,
   onCancelReply,
   onCancelEdit,
@@ -55,7 +57,7 @@ export function ChatReplyPreview({
               <Button
                 size="icon"
                 variant="ghost"
-                disabled={isGlobalUploading || isSending || !!editMessage || isLoading}
+                disabled={isGlobalUploading || isSending || isEditing || isLoading}
                 className="size-6 hover:bg-background/50 rounded-full"
                 onClick={() => {
                   if (replyTo) {
