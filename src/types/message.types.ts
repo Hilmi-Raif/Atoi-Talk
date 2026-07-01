@@ -86,7 +86,7 @@ export interface Message {
   action_data?: Record<string, unknown> | null;
 
   created_at: string;
-  attachments: Media[] | null;
+  attachments: Media[];
   reply_to: ReplyPreview | null;
   deleted_at?: string | null;
   edited_at?: string | null;
@@ -125,5 +125,5 @@ export interface GetMessagesParams {
  * Message with potentially deleted attachments for editing
  */
 export interface EditMessage extends Omit<Message, "attachments"> {
-  attachments: (Media & { delete?: boolean })[] | null;
+  attachments: (Media & { delete?: boolean })[];
 }

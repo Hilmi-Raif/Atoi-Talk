@@ -170,6 +170,133 @@ describe("useChatWebSocket Hook", () => {
     });
   });
 
+  it("handles 'message.update' event that clears attachments", async () => {
+    const ws = getMockWebSocket();
+    const initialMessage = {
+      id: "msg-1",
+      chat_id: "chat-1",
+      content: "With image",
+      attachments: [{ id: "att-1", url: "https://example.com/old.png" }],
+      created_at: new Date().toISOString(),
+    };
+    queryClient.setQueryData(["messages", "chat-1"], {
+      pages: [{ data: [initialMessage], next_cursor: null }],
+      pageParams: [null],
+    });
+    queryClient.setQueryData(["chats"], {
+      pages: [{ data: [{ id: "chat-1", last_message: initialMessage }] }],
+      pageParams: [null],
+    });
+
+    renderHook(() => useChatWebSocket("ws://test.com"), { wrapper });
+
+    act(() => {
+      ws.readyState = 1;
+      if (ws.onopen) ws.onopen({} as any);
+    });
+
+    const updateEvent = {
+      type: "message.update",
+      payload: {
+        id: "msg-1",
+        chat_id: "chat-1",
+        content: "Image removed",
+        attachments: [],
+        edited_at: new Date().toISOString(),
+      },
+    };
+
+    act(() => {
+      if (ws.onmessage) {
+        ws.onmessage({ data: JSON.stringify(updateEvent) } as MessageEvent);
+      }
+    });
+
+    await waitFor(() => {
+      const data: any = queryClient.getQueryData(["messages", "chat-1"]);
+      const msg = data.pages[0].data.find((m: any) => m.id === "msg-1");
+      expect(msg.attachments).toEqual([]);
+      expect(msg.content).toBe("Image removed");
+    });
+
+    const chats: any = queryClient.getQueryData(["chats"]);
+    expect(chats.pages[0].data[0].last_message.attachments).toEqual([]);
+  });
+
+  it("handles 'chat.update' event as a full chat snapshot", async () => {
+    const ws = getMockWebSocket();
+    queryClient.setQueryData(["chats"], {
+      pages: [
+        {
+          data: [
+            {
+              id: "chat-1",
+              type: "group",
+              name: "Old Group",
+              avatar: null,
+              unread_count: 7,
+              member_count: 2,
+              last_message: null,
+              my_role: "member",
+            },
+          ],
+        },
+      ],
+      pageParams: [null],
+    });
+    queryClient.setQueryData(["chat", "chat-1"], {
+      id: "chat-1",
+      type: "group",
+      name: "Old Group",
+      avatar: null,
+      unread_count: 7,
+      member_count: 2,
+      last_message: null,
+      my_role: "member",
+    });
+
+    renderHook(() => useChatWebSocket("ws://test.com"), { wrapper });
+
+    act(() => {
+      ws.readyState = 1;
+      if (ws.onopen) ws.onopen({} as any);
+    });
+
+    const updateEvent = {
+      type: "chat.update",
+      payload: {
+        id: "chat-1",
+        type: "group",
+        name: "New Group",
+        avatar: "https://example.com/avatar.png",
+        unread_count: 0,
+        member_count: 5,
+        last_message: null,
+        my_role: "admin",
+        is_public: true,
+      },
+    };
+
+    act(() => {
+      if (ws.onmessage) {
+        ws.onmessage({ data: JSON.stringify(updateEvent) } as MessageEvent);
+      }
+    });
+
+    await waitFor(() => {
+      const data: any = queryClient.getQueryData(["chats"]);
+      const chat = data.pages[0].data[0];
+      expect(chat.name).toBe("New Group");
+      expect(chat.member_count).toBe(5);
+      expect(chat.my_role).toBe("admin");
+      expect(chat.unread_count).toBe(7);
+    });
+
+    const detail: any = queryClient.getQueryData(["chat", "chat-1"]);
+    expect(detail.member_count).toBe(5);
+    expect(detail.my_role).toBe("admin");
+  });
+
   it("handles 'user.online' event updates chat list", async () => {
     const ws = getMockWebSocket();
     queryClient.setQueryData(["chats"], {

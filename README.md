@@ -1,10 +1,10 @@
-# AtoiTalk
+# Atoi-Talk
 
 ![AtoiTalk Preview](https://github.com/user-attachments/assets/630de5f6-26c2-488f-9c5e-3783ddc11957)
 
 Modern, real-time chat web application supporting private/group messaging, rich media uploads, robust administrative controls, and secure authentication. Built with React 19, TypeScript, Vite, Tailwind CSS, and Zustand.
 
-See [AtoiTalkAPI](https://github.com/ScrKiddie/AtoiTalkAPI) for the backend service.
+See [Atoi-Talk-API](https://github.com/Hilmi-Raif/Atoi-Talk-API) for the backend service.
 
 ## Features
 
@@ -91,8 +91,8 @@ src/
 1. Clone the repo:
 
 ```bash
-git clone https://github.com/ScrKiddie/AtoiTalk.git
-cd AtoiTalk
+git clone https://github.com/Hilmi-Raif/Atoi-Talk.git
+cd Atoi-Talk
 ```
 
 2. Copy and fill the env file:

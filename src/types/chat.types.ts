@@ -42,7 +42,7 @@ export interface ChatListItem {
   my_role?: "owner" | "admin" | "member";
   other_user_is_deleted?: boolean;
   other_user_is_banned?: boolean;
-  member_count?: number;
+  member_count: number;
   is_public?: boolean;
   invite_code?: string | null;
   invite_expires_at?: string | null;
@@ -97,7 +97,7 @@ export interface PublicGroupDTO {
   name: string;
   description: string;
   avatar: string | null;
-  member_count?: number;
+  member_count: number;
   is_member: boolean;
   chat_id: string;
 }
