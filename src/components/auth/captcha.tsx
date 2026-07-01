@@ -54,6 +54,9 @@ export const Captcha = forwardRef<CaptchaHandle, CaptchaProps>(
           pendingExecuteRef.current = true;
           return;
         }
+        if (mode === "execute") {
+          turnstileRef.current?.reset();
+        }
         turnstileRef.current?.execute();
       },
       getResponse: () => turnstileRef.current?.getResponse(),
