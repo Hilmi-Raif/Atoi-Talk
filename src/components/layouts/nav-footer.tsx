@@ -129,25 +129,24 @@ export function NavFooter({
                   <CircleUserRound />
                   Account
                 </DropdownMenuItem>
-                {mode === "admin" ? (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onSelect={() => {
-                        setOpenMobile(false);
-                        setTimeout(() => {
-                          navigate("/");
-                        }, 300);
-                      }}
-                    >
-                      <Home className="h-4 w-4" />
-                      Back to App
-                    </DropdownMenuItem>
-                  </>
-                ) : (
-                  activeUser.role === "admin" && (
-                    <>
-                      <DropdownMenuSeparator />
+              </DropdownMenuGroup>
+              {(mode === "admin" || activeUser.role === "admin") && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuGroup>
+                    {mode === "admin" ? (
+                      <DropdownMenuItem
+                        onSelect={() => {
+                          setOpenMobile(false);
+                          setTimeout(() => {
+                            navigate("/");
+                          }, 300);
+                        }}
+                      >
+                        <Home className="h-4 w-4" />
+                        Back to App
+                      </DropdownMenuItem>
+                    ) : (
                       <DropdownMenuItem
                         onSelect={() => {
                           setOpenMobile(false);
@@ -167,10 +166,10 @@ export function NavFooter({
                         <LayoutDashboard className="h-4 w-4" />
                         Admin Dashboard
                       </DropdownMenuItem>
-                    </>
-                  )
-                )}
-              </DropdownMenuGroup>
+                    )}
+                  </DropdownMenuGroup>
+                </>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
                 <DropdownMenuItem
@@ -182,7 +181,6 @@ export function NavFooter({
                   <Lock />
                   Security
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onSelect={() => {
                     setActiveMenu(null);
@@ -205,17 +203,16 @@ export function NavFooter({
                   <AlertTriangle className="h-4 w-4" />
                   Delete Account
                 </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() => {
+                    setActiveMenu(null);
+                    setOpenLogout(true);
+                  }}
+                >
+                  <DoorOpen />
+                  Logout
+                </DropdownMenuItem>
               </DropdownMenuGroup>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onSelect={() => {
-                  setActiveMenu(null);
-                  setOpenLogout(true);
-                }}
-              >
-                <DoorOpen />
-                Logout
-              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </SidebarMenuItem>

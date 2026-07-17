@@ -168,6 +168,12 @@ describe("NavFooter Component", () => {
     expect(screen.getByText("Test User")).toBeInTheDocument();
   });
 
+  it("groups related menu items without extra separators", () => {
+    renderComponent({ activeMenu: "footer-menu" });
+
+    expect(screen.getAllByRole("separator")).toHaveLength(2);
+  });
+
   it("opens account settings and updates profile", async () => {
     const setActiveMenu = vi.fn();
     const { user } = renderComponent({ activeMenu: "footer-menu", setActiveMenu });

@@ -96,9 +96,11 @@ export function MobileUserMenu({ current }: { current: User }) {
               <ThemeIcon className="h-4 w-4" />
               {themeLabel}
             </DropdownMenuItem>
-            {activeUser.role === "admin" && (
-              <>
-                <DropdownMenuSeparator />
+          </DropdownMenuGroup>
+          {activeUser.role === "admin" && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
                 <DropdownMenuItem
                   onSelect={() => {
                     const hasCachedData = queryClient.getQueryData(["admin-stats"]);
@@ -116,34 +118,34 @@ export function MobileUserMenu({ current }: { current: User }) {
                   <LayoutDashboard className="h-4 w-4" />
                   Admin Dashboard
                 </DropdownMenuItem>
-              </>
-            )}
-          </DropdownMenuGroup>
+              </DropdownMenuGroup>
+            </>
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
             <DropdownMenuItem onSelect={() => setOpenSecurity(true)}>
               <Lock className="h-4 w-4" />
               Security
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={() => setOpenBlocked(true)}>
               <Ban className="h-4 w-4" />
               Blocked Users
             </DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
-          <DropdownMenuItem
-            className="text-destructive focus:text-destructive"
-            onSelect={() => setOpenDeleteAccount(true)}
-          >
-            <AlertTriangle className="h-4 w-4" />
-            Delete Account
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={() => setOpenLogout(true)}>
-            <DoorOpen />
-            Logout
-          </DropdownMenuItem>
+          <DropdownMenuGroup>
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onSelect={() => setOpenDeleteAccount(true)}
+            >
+              <AlertTriangle className="h-4 w-4" />
+              Delete Account
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => setOpenLogout(true)}>
+              <DoorOpen />
+              Logout
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
 

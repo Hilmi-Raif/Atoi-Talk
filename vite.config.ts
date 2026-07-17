@@ -13,11 +13,11 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       injectRegister: "auto",
-      includeAssets: ["logo.png"],
       pwaAssets: {
         config: true,
         image: "public/pwa.png",
         overrideManifestIcons: true,
+        includeHtmlHeadLinks: false,
       },
       manifest: {
         name: "AtoiTalk",
