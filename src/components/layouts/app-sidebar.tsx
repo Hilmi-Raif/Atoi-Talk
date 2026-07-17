@@ -27,6 +27,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   const chats =
     data?.pages.flatMap((page) => page.data).filter((chat) => chat.last_message !== null) || [];
+  const isChatListEmpty = chats.length === 0 && !searchQuery && !isLoading && !isError;
 
   const { scrollRef, handleScroll, handleWheel } = useChatListScroll({
     hasNextPage: hasNextPage ?? false,
@@ -72,7 +73,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         onWheel={handleWheel}
         scrollRef={scrollRef}
       >
-        <ChatSearchInput onSearch={debouncedSetSearch} initialValue={searchQuery} />
+        <ChatSearchInput
+          onSearch={debouncedSetSearch}
+          initialValue={searchQuery}
+          disabled={isChatListEmpty}
+        />
         <NavChat
           chats={chats}
           activeMenu={activeMenu}

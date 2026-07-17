@@ -25,6 +25,7 @@ export function BlockedUsersDialog({
   const [blockedSearch, setBlockedSearch] = useState("");
   const [debouncedBlockedSearch, setDebouncedBlockedSearch] = useState("");
   const [userToUnblock, setUserToUnblock] = useState<string | null>(null);
+  const [hasLoadedBlockedUsers, setHasLoadedBlockedUsers] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -47,6 +48,14 @@ export function BlockedUsersDialog({
   });
 
   const blockedUsers = blockedUsersData?.pages.flatMap((page) => page.data) || [];
+  const isSearchDisabled =
+    !blockedSearch && (!hasLoadedBlockedUsers || (!isLoadingBlocked && blockedUsers.length === 0));
+
+  useEffect(() => {
+    if (open && !isLoadingBlocked) {
+      setHasLoadedBlockedUsers(true);
+    }
+  }, [open, isLoadingBlocked]);
 
   return (
     <>
@@ -56,6 +65,7 @@ export function BlockedUsersDialog({
           if (!val) {
             setBlockedSearch("");
             setDebouncedBlockedSearch("");
+            setHasLoadedBlockedUsers(false);
           }
           onOpenChange(val);
         }}
@@ -78,7 +88,7 @@ export function BlockedUsersDialog({
                 className="pl-8"
                 value={blockedSearch}
                 onChange={(e) => setBlockedSearch(e.target.value)}
-                disabled={!isLoadingBlocked && blockedUsers.length === 0 && !blockedSearch}
+                disabled={isSearchDisabled}
                 maxLength={100}
               />
             </div>

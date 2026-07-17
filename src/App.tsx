@@ -9,6 +9,7 @@ import { LoadingScreen } from "@/components/ui/loading-screen";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar.tsx";
 import { Toaster } from "@/components/ui/sonner";
 import { WebSocketProvider } from "@/context/websocket-context";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { queryClient } from "@/lib/query-client";
 import ChatRoom from "@/pages/chat-room.tsx";
 import ForgotPassword from "@/pages/forgot-password";
@@ -16,6 +17,7 @@ import GoogleCallback from "@/pages/google-callback";
 import InvitePage from "@/pages/invite";
 import Landing from "@/pages/landing";
 import Login from "@/pages/login";
+import MobileChatListPage from "@/pages/mobile-chat-list";
 import Register from "@/pages/register";
 import { adminService, userService } from "@/services";
 import { useAuthStore, useUIStore } from "@/store";
@@ -95,6 +97,7 @@ const EmptyChatState = () => {
 const AnimatedRoutes = () => {
   const location = useLocation();
   const isFirstRender = useRef(true);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     isFirstRender.current = false;
@@ -168,15 +171,24 @@ const AnimatedRoutes = () => {
             <Route
               path="/chat/*"
               element={
-                <SidebarProvider>
-                  <AppSidebar />
+                isMobile ? (
                   <Routes>
-                    <Route path="/" element={<EmptyChatState />} />
+                    <Route path="/" element={<MobileChatListPage />} />
                     <Route path=":chatId" element={<ChatRoom />} />
                     <Route path="u/:userId" element={<ChatRoom />} />
                     <Route path="*" element={<Navigate to="/chat" replace />} />
                   </Routes>
-                </SidebarProvider>
+                ) : (
+                  <SidebarProvider>
+                    <AppSidebar />
+                    <Routes>
+                      <Route path="/" element={<EmptyChatState />} />
+                      <Route path=":chatId" element={<ChatRoom />} />
+                      <Route path="u/:userId" element={<ChatRoom />} />
+                      <Route path="*" element={<Navigate to="/chat" replace />} />
+                    </Routes>
+                  </SidebarProvider>
+                )
               }
             />
           </Route>

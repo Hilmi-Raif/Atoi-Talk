@@ -1,15 +1,18 @@
 import { ModeToggle } from "@/components/mode-toggle.tsx";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar.tsx";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuthStore, useChatStore, useUIStore } from "@/store";
 import { ChatListItem, User } from "@/types";
-import { Users } from "lucide-react";
+import { ArrowLeft, Users } from "lucide-react";
 
 import { GroupProfileDialog } from "@/components/modals/group-profile-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getInitials } from "@/lib/avatar-utils";
 import { formatLastSeen } from "@/lib/utils";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface ChatHeaderProps {
   chat: ChatListItem;
@@ -38,6 +41,8 @@ const ChatHeader = ({
 }: ChatHeaderProps) => {
   const typingUsers = useChatStore((state) => state.typingUsers);
   const { user: currentUser } = useAuthStore();
+  const isMobile = useIsMobile();
+  const navigate = useNavigate();
 
   const isTyping = typingUsers[chat.id]?.some((id) => id !== currentUser?.id);
   const openProfileModal = useUIStore((state) => state.openProfileModal);
@@ -135,7 +140,20 @@ const ChatHeader = ({
       <header className="border-b dark:border-[#212224] border-[#e4e4e7] z-50 bg-background flex h-[63px] shrink-0 items-center gap-2">
         <div className="flex gap-2 px-4 w-full justify-between items-center">
           <div className="flex items-center justify-center gap-2">
-            <SidebarTrigger className={`mr-1`} />
+            {isMobile ? (
+              <Button
+                type="button"
+                aria-label="Back to chats"
+                variant="outline"
+                size="icon"
+                onClick={() => navigate("/chat")}
+                className="mr-1 size-8"
+              >
+                <ArrowLeft className="size-4" />
+              </Button>
+            ) : (
+              <SidebarTrigger className={`mr-1`} />
+            )}
 
             <div
               className={`flex items-center gap-2 transition-opacity ${

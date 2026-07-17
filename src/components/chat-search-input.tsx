@@ -5,12 +5,19 @@ import * as React from "react";
 interface ChatSearchInputProps {
   onSearch: (query: string) => void;
   initialValue?: string;
+  disabled?: boolean;
 }
 
-export function ChatSearchInput({ onSearch, initialValue }: ChatSearchInputProps) {
+export function ChatSearchInput({
+  onSearch,
+  initialValue,
+  disabled = false,
+}: ChatSearchInputProps) {
   const [value, setValue] = React.useState(initialValue || "");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (disabled) return;
+
     const newValue = e.target.value;
     setValue(newValue);
     onSearch(newValue);
@@ -25,6 +32,7 @@ export function ChatSearchInput({ onSearch, initialValue }: ChatSearchInputProps
           className="pl-9 h-9 bg-sidebar-accent/50 border-sidebar-border"
           value={value}
           onChange={handleChange}
+          disabled={disabled}
           maxLength={100}
         />
       </div>
