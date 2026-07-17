@@ -1,3 +1,4 @@
+import { getLatestReadReceiptTimestamp, getReadReceiptTimestamp } from "@/lib/read-receipts";
 import { useChatStore } from "@/store";
 import { ChatListItem, GroupMember, Message, PaginatedResponse } from "@/types";
 import { InfiniteData, useQueryClient } from "@tanstack/react-query";
@@ -41,7 +42,7 @@ export const useMessageEvents = (
         }
       );
 
-      if (payload.type.startsWith("system_")) {
+      if (payload.type?.startsWith("system_")) {
         const actionData = (payload.action_data || {}) as {
           target_id?: string;
           new_role?: "owner" | "admin" | "member";
@@ -330,6 +331,7 @@ export const useMessageEvents = (
           }
 
           if (!targetChat) {
+            queryClient.invalidateQueries({ queryKey: ["chats"] });
             return oldData;
           }
 
@@ -339,7 +341,7 @@ export const useMessageEvents = (
             unread_count:
               payload.sender_id !== currentUser?.id &&
               payload.chat_id !== activeChatId &&
-              !payload.type.startsWith("system_")
+              !payload.type?.startsWith("system_")
                 ? (targetChat.unread_count || 0) + 1
                 : targetChat.unread_count,
           };
@@ -368,7 +370,7 @@ export const useMessageEvents = (
           unread_count:
             payload.sender_id !== currentUser?.id &&
             payload.chat_id !== activeChatId &&
-            !payload.type.startsWith("system_")
+            !payload.type?.startsWith("system_")
               ? (oldChat.unread_count || 0) + 1
               : oldChat.unread_count,
         };
@@ -384,7 +386,9 @@ export const useMessageEvents = (
   );
 
   const handleMessageUpdate = useCallback(
-    (payload: Message) => {
+    (payload: Message & { is_read?: boolean }, meta?: { timestamp?: number | string | null }) => {
+      let readReceiptAt: string | null = null;
+
       queryClient.setQueriesData<InfiniteData<PaginatedResponse<Message>>>(
         { queryKey: ["messages", payload.chat_id] },
         (oldData) => {
@@ -393,6 +397,9 @@ export const useMessageEvents = (
             ...page,
             data: page.data.map((m: Message) => {
               if (m.id === payload.id) {
+                if (payload.is_read && m.sender_id === currentUser?.id) {
+                  readReceiptAt = getReadReceiptTimestamp(meta, new Date(m.created_at));
+                }
                 return { ...m, ...payload };
               }
               return m;
@@ -409,7 +416,22 @@ export const useMessageEvents = (
             ...page,
             data: page.data.map((chat: ChatListItem) => {
               if (chat.last_message?.id === payload.id) {
-                return { ...chat, last_message: { ...chat.last_message, ...payload } };
+                return {
+                  ...chat,
+                  last_message: { ...chat.last_message, ...payload },
+                  other_last_read_at: readReceiptAt
+                    ? getLatestReadReceiptTimestamp(chat.other_last_read_at, readReceiptAt)
+                    : chat.other_last_read_at,
+                };
+              }
+              if (chat.id === payload.chat_id && readReceiptAt) {
+                return {
+                  ...chat,
+                  other_last_read_at: getLatestReadReceiptTimestamp(
+                    chat.other_last_read_at,
+                    readReceiptAt
+                  ),
+                };
               }
               return chat;
             }),
@@ -418,13 +440,27 @@ export const useMessageEvents = (
         }
       );
 
+      if (readReceiptAt) {
+        const nextReadReceiptAt = readReceiptAt;
+        queryClient.setQueryData<ChatListItem>(["chat", payload.chat_id], (oldChat) => {
+          if (!oldChat) return oldChat;
+          return {
+            ...oldChat,
+            other_last_read_at: getLatestReadReceiptTimestamp(
+              oldChat.other_last_read_at,
+              nextReadReceiptAt
+            ),
+          };
+        });
+      }
+
       if (payload.chat_id && payload.sender_id) {
         setUserTyping(payload.chat_id, payload.sender_id, false);
         const key = `${payload.chat_id}-${payload.sender_id}`;
         clearTypingTimeout(key);
       }
     },
-    [queryClient, setUserTyping, clearTypingTimeout]
+    [currentUser?.id, queryClient, setUserTyping, clearTypingTimeout]
   );
 
   const handleMessageDelete = useCallback(

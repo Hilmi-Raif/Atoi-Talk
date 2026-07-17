@@ -137,13 +137,72 @@ describe("useChatWebSocket Hook", () => {
     });
   });
 
+  it("refetches chats when incoming message belongs to a chat missing from sidebar cache", async () => {
+    const ws = getMockWebSocket();
+    queryClient.setQueryData(["chats"], {
+      pages: [{ data: [] }],
+      pageParams: [null],
+    });
+    const invalidateQueriesSpy = vi.spyOn(queryClient, "invalidateQueries");
+
+    renderHook(() => useChatWebSocket("ws://test.com"), { wrapper });
+
+    act(() => {
+      ws.readyState = 1;
+      if (ws.onopen) ws.onopen({} as any);
+    });
+
+    act(() => {
+      if (ws.onmessage) {
+        ws.onmessage({
+          data: JSON.stringify({
+            type: "message.new",
+            payload: {
+              id: "msg-new-chat",
+              chat_id: "chat-missing",
+              content: "First message",
+              sender_id: "other-user",
+              sender_name: "Other User",
+              type: "text",
+              created_at: new Date().toISOString(),
+              attachments: [],
+              reply_to: null,
+            },
+          }),
+        } as MessageEvent);
+      }
+    });
+
+    await waitFor(() => {
+      expect(invalidateQueriesSpy).toHaveBeenCalledWith({ queryKey: ["chats"] });
+    });
+  });
+
   it("handles 'message.update' (read status) event", async () => {
     const ws = getMockWebSocket();
-    const initialMessage = { id: "msg-1", content: "Hi", is_read: false };
+    const initialMessage = {
+      id: "msg-1",
+      chat_id: "chat-1",
+      sender_id: "user1",
+      content: "Hi",
+      created_at: "2026-07-17T14:35:00.000Z",
+      is_read: false,
+    };
+    const initialChat = {
+      id: "chat-1",
+      type: "private",
+      last_message: initialMessage,
+      other_last_read_at: null,
+    };
     queryClient.setQueryData(["messages", "chat-1"], {
       pages: [{ data: [initialMessage], next_cursor: null }],
       pageParams: [null],
     });
+    queryClient.setQueryData(["chats"], {
+      pages: [{ data: [initialChat] }],
+      pageParams: [null],
+    });
+    queryClient.setQueryData(["chat", "chat-1"], initialChat);
 
     renderHook(() => useChatWebSocket("ws://test.com"), { wrapper });
 
@@ -155,6 +214,7 @@ describe("useChatWebSocket Hook", () => {
     const updateEvent = {
       type: "message.update",
       payload: { id: "msg-1", chat_id: "chat-1", is_read: true },
+      meta: { timestamp: Date.parse("2026-07-17T14:40:00.000Z") },
     };
 
     act(() => {
@@ -167,6 +227,10 @@ describe("useChatWebSocket Hook", () => {
       const data: any = queryClient.getQueryData(["messages", "chat-1"]);
       const msg = data.pages[0].data.find((m: any) => m.id === "msg-1");
       expect(msg.is_read).toBe(true);
+      const list: any = queryClient.getQueryData(["chats"]);
+      const detail: any = queryClient.getQueryData(["chat", "chat-1"]);
+      expect(list.pages[0].data[0].other_last_read_at).toBe("2026-07-17T14:40:00.000Z");
+      expect(detail.other_last_read_at).toBe("2026-07-17T14:40:00.000Z");
     });
   });
 
@@ -295,6 +359,51 @@ describe("useChatWebSocket Hook", () => {
     const detail: any = queryClient.getQueryData(["chat", "chat-1"]);
     expect(detail.member_count).toBe(5);
     expect(detail.my_role).toBe("admin");
+  });
+
+  it("handles 'chat.read' event with the websocket event timestamp", async () => {
+    const ws = getMockWebSocket();
+    const chat = {
+      id: "chat-1",
+      type: "private",
+      name: "Partner",
+      avatar: null,
+      unread_count: 0,
+      member_count: 2,
+      last_message: null,
+      other_last_read_at: null,
+    };
+    queryClient.setQueryData(["chats"], {
+      pages: [{ data: [chat] }],
+      pageParams: [null],
+    });
+    queryClient.setQueryData(["chat", "chat-1"], chat);
+
+    renderHook(() => useChatWebSocket("ws://test.com"), { wrapper });
+
+    act(() => {
+      ws.readyState = 1;
+      if (ws.onopen) ws.onopen({} as any);
+    });
+
+    act(() => {
+      if (ws.onmessage) {
+        ws.onmessage({
+          data: JSON.stringify({
+            type: "chat.read",
+            payload: { chat_id: "chat-1", user_id: "other-user" },
+            meta: { timestamp: Date.parse("2026-07-17T14:40:00.000Z") },
+          }),
+        } as MessageEvent);
+      }
+    });
+
+    await waitFor(() => {
+      const list: any = queryClient.getQueryData(["chats"]);
+      const detail: any = queryClient.getQueryData(["chat", "chat-1"]);
+      expect(list.pages[0].data[0].other_last_read_at).toBe("2026-07-17T14:40:00.000Z");
+      expect(detail.other_last_read_at).toBe("2026-07-17T14:40:00.000Z");
+    });
   });
 
   it("handles 'user.online' event updates chat list", async () => {

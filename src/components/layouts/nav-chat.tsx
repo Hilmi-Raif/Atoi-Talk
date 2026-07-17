@@ -20,6 +20,7 @@ import { useDeleteGroup, useLeaveGroup } from "@/hooks/mutations/use-group";
 import { useHideChat } from "@/hooks/mutations/use-hide-chat";
 import { getInitials } from "@/lib/avatar-utils";
 import { formatChatPreviewDate } from "@/lib/date-utils";
+import { getPrivateMessageReceiptState } from "@/lib/read-receipts";
 import { cn } from "@/lib/utils";
 import { useAuthStore, useChatStore, useUIStore } from "@/store";
 import { ChatListItem } from "@/types";
@@ -142,6 +143,11 @@ export function NavChat({
             const isDeleted = chat.type === "private" && chat.other_user_is_deleted;
             const displayName = isDeleted ? "Deleted Account" : chat.name;
             const initials = getInitials(displayName);
+            const receiptState = getPrivateMessageReceiptState({
+              otherLastReadAt: chat.other_last_read_at,
+              messageCreatedAt: chat.last_message?.created_at,
+              isOtherOnline: chat.is_online,
+            });
 
             return (
               <SidebarMenuItem
@@ -197,12 +203,9 @@ export function NavChat({
                         <div className="flex items-center gap-1 pr-1 shrink-0">
                           {chat.type !== "group" &&
                             chat.last_message?.sender_id === currentUser?.id &&
-                            (chat.other_last_read_at &&
-                            chat.last_message?.created_at &&
-                            new Date(chat.other_last_read_at) >=
-                              new Date(chat.last_message.created_at) ? (
+                            (receiptState === "read" ? (
                               <CheckCheck className="size-3.5 text-blue-500" />
-                            ) : chat.is_online ? (
+                            ) : receiptState === "delivered" ? (
                               <CheckCheck className="size-3.5 text-muted-foreground" />
                             ) : (
                               <Check className="size-3.5 text-muted-foreground/70" />

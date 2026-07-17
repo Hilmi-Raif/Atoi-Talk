@@ -4,7 +4,12 @@ import { useChatMessages } from "@/hooks/chat-room/use-chat-room-messages";
 import { useMarkAsRead } from "@/hooks/mutations/use-mark-read";
 import { ChatListItem, PaginatedResponse } from "@/types";
 import { InfiniteData } from "@tanstack/react-query";
-import { useEffect, useLayoutEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+
+const canMarkReadInCurrentWindow = () => {
+  if (typeof document === "undefined") return true;
+  return document.visibilityState === "visible" && document.hasFocus();
+};
 
 export const useChatRoom = () => {
   const {
@@ -116,9 +121,25 @@ export const useChatRoom = () => {
   });
 
   const { mutate: markAsRead } = useMarkAsRead();
+  const [canMarkRead, setCanMarkRead] = useState(canMarkReadInCurrentWindow);
 
   useEffect(() => {
-    if (!currentChatId || activeChatId !== currentChatId) return;
+    const updateCanMarkRead = () => setCanMarkRead(canMarkReadInCurrentWindow());
+
+    updateCanMarkRead();
+    window.addEventListener("focus", updateCanMarkRead);
+    window.addEventListener("blur", updateCanMarkRead);
+    document.addEventListener("visibilitychange", updateCanMarkRead);
+
+    return () => {
+      window.removeEventListener("focus", updateCanMarkRead);
+      window.removeEventListener("blur", updateCanMarkRead);
+      document.removeEventListener("visibilitychange", updateCanMarkRead);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!currentChatId || activeChatId !== currentChatId || !canMarkRead) return;
 
     queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
       { queryKey: ["chats"] },
@@ -142,7 +163,7 @@ export const useChatRoom = () => {
     if (unreadCount > 0) {
       markAsRead(currentChatId);
     }
-  }, [currentChatId, activeChatId, queryClient, markAsRead, chat?.unread_count]);
+  }, [currentChatId, activeChatId, canMarkRead, queryClient, markAsRead, chat?.unread_count]);
 
   const displayMessages = [...messages].sort(
     (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
@@ -153,28 +174,23 @@ export const useChatRoom = () => {
   const lastMarkedReadMessageIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!currentChatId || activeChatId !== currentChatId || !lastMessageId) return;
+    if (!currentChatId || activeChatId !== currentChatId || !canMarkRead || !lastMessageId) return;
 
     const isMyMessage = lastMessageSenderId === currentUser?.id;
     const isAlreadyMarked = lastMarkedReadMessageIdRef.current === lastMessageId;
 
     if (!isMyMessage && !isAlreadyMarked) {
-      const unreadCount = chat?.unread_count || 0;
-
-      if (unreadCount === 0) {
-        markAsRead(currentChatId);
-      }
-
       lastMarkedReadMessageIdRef.current = lastMessageId;
+      markAsRead(currentChatId);
     }
   }, [
     currentChatId,
     activeChatId,
+    canMarkRead,
     lastMessageId,
     lastMessageSenderId,
     currentUser?.id,
     markAsRead,
-    chat?.unread_count,
   ]);
 
   return {

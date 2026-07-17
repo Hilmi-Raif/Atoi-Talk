@@ -16,6 +16,7 @@ import {
 import { ReportDialog } from "@/components/modals/report-dialog";
 import { Spinner } from "@/components/ui/spinner.tsx";
 
+import { getPrivateMessageReceiptState } from "@/lib/read-receipts";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { userService } from "@/services";
@@ -76,6 +77,12 @@ const MessageBubble = ({
   partnerProfile,
 }: MessageBubbleProps) => {
   const isCurrentUser = message.sender_id === current?.id;
+  const receiptState = getPrivateMessageReceiptState({
+    otherLastReadAt: chat?.other_last_read_at,
+    messageCreatedAt: message.created_at,
+    isOtherOnline: partnerProfile?.is_online,
+    otherLastSeenAt: partnerProfile?.last_seen_at,
+  });
   const [isReportOpen, setIsReportOpen] = React.useState(false);
 
   const handleReply = () => {
@@ -374,14 +381,9 @@ const MessageBubble = ({
                 isCurrentUser &&
                 !message.deleted_at &&
                 chat?.type !== "group" &&
-                (chat?.other_last_read_at &&
-                message.created_at &&
-                new Date(chat.other_last_read_at) >= new Date(message.created_at) ? (
+                (receiptState === "read" ? (
                   <CheckCheck className="size-3 text-blue-500" />
-                ) : partnerProfile?.is_online ||
-                  (partnerProfile?.last_seen_at &&
-                    message.created_at &&
-                    new Date(partnerProfile.last_seen_at) > new Date(message.created_at)) ? (
+                ) : receiptState === "delivered" ? (
                   <CheckCheck className="size-3 text-muted-foreground" />
                 ) : (
                   <Check

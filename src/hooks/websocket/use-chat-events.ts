@@ -1,4 +1,5 @@
 import { errorLog } from "@/lib/logger";
+import { getLatestReadReceiptTimestamp, getReadReceiptTimestamp } from "@/lib/read-receipts";
 import { useChatStore } from "@/store";
 import { ChatListItem, PaginatedResponse } from "@/types";
 import { InfiniteData, useQueryClient } from "@tanstack/react-query";
@@ -208,9 +209,12 @@ export const useChatEvents = (currentUser: { id: string } | null) => {
   );
 
   const handleChatRead = useCallback(
-    (payload: { chat_id: string; user_id: string }) => {
+    (
+      payload: { chat_id: string; user_id: string },
+      meta?: { timestamp?: number | string | null }
+    ) => {
       if (payload.user_id !== currentUser?.id) {
-        const now = new Date().toISOString();
+        const readAt = getReadReceiptTimestamp(meta);
 
         queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
           { queryKey: ["chats"] },
@@ -224,7 +228,10 @@ export const useChatEvents = (currentUser: { id: string } | null) => {
                   if (chat.id === payload.chat_id) {
                     return {
                       ...chat,
-                      other_last_read_at: now,
+                      other_last_read_at: getLatestReadReceiptTimestamp(
+                        chat.other_last_read_at,
+                        readAt
+                      ),
                     };
                   }
                   return chat;
@@ -238,7 +245,7 @@ export const useChatEvents = (currentUser: { id: string } | null) => {
           if (!oldChat) return oldChat;
           return {
             ...oldChat,
-            other_last_read_at: now,
+            other_last_read_at: getLatestReadReceiptTimestamp(oldChat.other_last_read_at, readAt),
           };
         });
       }

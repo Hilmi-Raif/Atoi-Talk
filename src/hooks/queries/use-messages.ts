@@ -216,6 +216,14 @@ export function useSendMessage() {
           return { ...oldData, pages: newPages };
         }
       );
+
+      queryClient.setQueryData<ChatListItem>(["chat", newMessage.chat_id], (oldChat) => {
+        if (!oldChat) return oldChat;
+        return {
+          ...oldChat,
+          last_message: newMessage,
+        };
+      });
     },
   });
 }

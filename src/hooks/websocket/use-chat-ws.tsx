@@ -49,7 +49,7 @@ export const useChatWebSocket = (url: string) => {
             handleMessageNew(data.payload as Message);
             break;
           case "message.update":
-            handleMessageUpdate(data.payload as Message);
+            handleMessageUpdate(data.payload as Message, data.meta);
             break;
           case "message.delete":
             handleMessageDelete(data);
@@ -68,7 +68,7 @@ export const useChatWebSocket = (url: string) => {
             handleChatDelete(data);
             break;
           case "chat.read":
-            handleChatRead(data.payload);
+            handleChatRead(data.payload, data.meta);
             break;
           case "chat.typing":
             handleTypingEvent(data);
