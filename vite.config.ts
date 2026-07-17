@@ -3,10 +3,45 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import * as path from "node:path";
 import { defineConfig } from "vite";
+import { VitePWA } from "vite-plugin-pwa";
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    VitePWA({
+      registerType: "autoUpdate",
+      injectRegister: "auto",
+      includeAssets: ["logo.png"],
+      pwaAssets: {
+        config: true,
+        image: "public/pwa.png",
+        overrideManifestIcons: true,
+      },
+      manifest: {
+        name: "AtoiTalk",
+        short_name: "AtoiTalk",
+        description: "AtoiTalk chat application",
+        theme_color: "#09090b",
+        background_color: "#09090b",
+        display: "standalone",
+        display_override: ["window-controls-overlay", "standalone", "minimal-ui"],
+        orientation: "portrait",
+        scope: "/",
+        start_url: "/chat",
+        categories: ["social", "communication"],
+        lang: "en",
+      },
+      workbox: {
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,woff2}"],
+        navigateFallbackDenylist: [/^\/api\//],
+      },
+    }),
+  ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

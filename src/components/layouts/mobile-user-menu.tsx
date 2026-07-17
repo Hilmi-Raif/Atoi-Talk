@@ -50,7 +50,9 @@ export function MobileUserMenu({ current }: { current: User }) {
   const logout = useLogout();
 
   const activeUser = latestUser || current;
-  const isDarkTheme = theme === "dark";
+  const isDarkTheme =
+    theme === "dark" ||
+    (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
   const nextTheme = isDarkTheme ? "light" : "dark";
   const ThemeIcon = isDarkTheme ? Sun : Moon;
   const themeLabel = isDarkTheme ? "Light mode" : "Dark mode";

@@ -4,6 +4,10 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#09090b" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="AtoiTalk" />
     <title>AtoiTalk</title>
 
     <style>
@@ -31,11 +35,12 @@
 
     <script>
       (function () {
-        const theme = localStorage.getItem("vite-ui-theme") || "system";
+        const theme = localStorage.getItem("vite-ui-theme") || "light";
         const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
         const isDark = theme === "dark" || (theme === "system" && prefersDark);
 
         document.documentElement.classList.toggle("dark", isDark);
+        document.documentElement.classList.toggle("light", !isDark);
       })();
     </script>
   </head>
