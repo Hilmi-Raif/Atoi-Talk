@@ -146,6 +146,7 @@ const ChatHeader = ({
                 aria-label="Back to chats"
                 variant="outline"
                 size="icon"
+                disabled={isBusy}
                 onClick={() => navigate("/chat")}
                 className="mr-1 size-8"
               >

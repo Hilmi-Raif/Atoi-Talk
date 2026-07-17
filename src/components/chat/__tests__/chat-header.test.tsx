@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockNavigate = vi.fn();
 let mockIsMobile = true;
+let mockIsBusy = false;
 
 vi.mock("@/hooks/use-mobile", () => ({
   useIsMobile: () => mockIsMobile,
@@ -22,13 +23,14 @@ vi.mock("@/store", () => ({
   useChatStore: (selector: (state: { typingUsers: Record<string, string[]> }) => unknown) =>
     selector({ typingUsers: {} }),
   useUIStore: (selector: (state: { isBusy: boolean; openProfileModal: () => void }) => unknown) =>
-    selector({ isBusy: false, openProfileModal: vi.fn() }),
+    selector({ isBusy: mockIsBusy, openProfileModal: vi.fn() }),
 }));
 
 describe("ChatHeader", () => {
   beforeEach(() => {
     mockNavigate.mockClear();
     mockIsMobile = true;
+    mockIsBusy = false;
   });
 
   it("uses a back button to return to the mobile chat list", () => {
@@ -66,5 +68,46 @@ describe("ChatHeader", () => {
     fireEvent.click(screen.getByRole("button", { name: /back to chats/i }));
 
     expect(mockNavigate).toHaveBeenCalledWith("/chat");
+  });
+
+  it("disables the mobile back button while the app is busy", () => {
+    mockIsBusy = true;
+
+    render(
+      <ChatHeader
+        chat={{
+          id: "chat-1",
+          type: "private",
+          name: "Hilmi Raif Avicenna",
+          avatar: null,
+          unread_count: 0,
+          last_message: null,
+          other_user_id: "user-2",
+          member_count: 2,
+        }}
+        partnerId="user-2"
+        partnerProfile={{
+          id: "user-2",
+          full_name: "Hilmi Raif Avicenna",
+          username: "hilmi",
+          email: "hilmi@example.com",
+          avatar: null,
+          role: "user",
+          is_banned: false,
+          is_online: true,
+          is_blocked_by_me: false,
+          is_blocked_by_other: false,
+          has_password: true,
+          created_at: "2026-07-17T10:00:00.000Z",
+          updated_at: "2026-07-17T10:00:00.000Z",
+        }}
+      />
+    );
+
+    const backButton = screen.getByRole("button", { name: /back to chats/i });
+
+    expect(backButton).toBeDisabled();
+    fireEvent.click(backButton);
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 });

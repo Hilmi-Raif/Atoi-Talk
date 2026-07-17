@@ -118,9 +118,9 @@ const ChatFooter = ({
   const isGlobalUploading = isUploading || isSolvingCaptcha;
 
   React.useEffect(() => {
-    setBusy(isGlobalUploading || isSending || false);
+    setBusy(isGlobalUploading || isSending || isEditing || false);
     return () => setBusy(false);
-  }, [isGlobalUploading, isSending, setBusy]);
+  }, [isGlobalUploading, isSending, isEditing, setBusy]);
 
   const isBlockedByMe = partnerProfile?.is_blocked_by_me;
   const isBlockedByOther = partnerProfile?.is_blocked_by_other;
