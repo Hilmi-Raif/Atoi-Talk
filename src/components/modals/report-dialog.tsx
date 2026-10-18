@@ -85,8 +85,6 @@ export function ReportDialog({
     report(payload, {
       onSuccess: () => {
         onClose(false);
-        form.reset();
-        setCustomReason("");
       },
     });
   };

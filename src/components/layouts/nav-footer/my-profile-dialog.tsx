@@ -435,7 +435,7 @@ export function MyProfileDialog({
                     className="text-primary font-medium cursor-pointer hover:opacity-80 transition-opacity"
                     onClick={() => {
                       onOpenChange(false);
-                      setTimeout(() => onOpenSecurity(), 150);
+                      onOpenSecurity();
                     }}
                   >
                     password

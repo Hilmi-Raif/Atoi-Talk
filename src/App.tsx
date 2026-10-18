@@ -2,6 +2,7 @@ import { AppSidebar } from "@/components/layouts/app-sidebar.tsx";
 import { BannedUserDialog } from "@/components/modals/banned-user-dialog";
 import { UserProfileDialog } from "@/components/modals/user-profile-dialog";
 import { ModeToggle } from "@/components/mode-toggle.tsx";
+import { PushProvider } from "@/components/providers/push-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import ProtectedRoute from "@/components/routes/protected-route";
 import PublicRoute from "@/components/routes/public-route";
@@ -128,6 +129,7 @@ const AnimatedRoutes = () => {
 
   return (
     <WebSocketProvider>
+      <PushProvider />
       <AnimatePresence mode="wait" initial={true}>
         <Routes location={location} key={getPageKey(location.pathname)}>
           <Route path="/invite/:code" element={<InvitePage />} />

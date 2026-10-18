@@ -76,7 +76,6 @@ export const ChatMessageList = ({
   isRemoteJumping,
   isMessagesError,
   jumpError,
-  isRefetching,
   isReadyToDisplay,
   failedJumpTargetId,
   jumpTargetId,
@@ -93,7 +92,7 @@ export const ChatMessageList = ({
           {(isMessagesLoading && items.length === 0) ||
           isRemoteJumping ||
           (isJumped && isMessagesLoading) ||
-          (!isReadyToDisplay && items.length > 0 && !isRefetching) ? (
+          (!isReadyToDisplay && items.length > 0) ? (
             <ChatLoading />
           ) : null}
 

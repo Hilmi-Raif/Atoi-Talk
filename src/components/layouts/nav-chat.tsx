@@ -1,3 +1,7 @@
+import {
+  ChatNotificationItems,
+  ChatNotificationStatus,
+} from "@/components/chat/chat-notification-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -77,6 +81,7 @@ export function NavChat({
   const activeId = match ? match[1] : null;
 
   const [hoveredChatId, setHoveredChatId] = useState<string | null>(null);
+  const [notificationMenuId, setNotificationMenuId] = useState<string | null>(null);
   const [chatToDelete, setChatToDelete] = useState<ChatListItem | null>(null);
 
   const { mutate: hideChat, isPending: isHidingChat } = useHideChat();
@@ -107,6 +112,7 @@ export function NavChat({
   const handleMenuTriggerClick = (event: MouseEvent<HTMLButtonElement>, menuId: string) => {
     event.preventDefault();
     event.stopPropagation();
+    if (activeMenu !== menuId) setNotificationMenuId(null);
     setActiveMenu(activeMenu === menuId ? null : menuId);
   };
 
@@ -197,8 +203,9 @@ export function NavChat({
                     </div>
                     <div className="grid flex-1 text-left text-sm leading-tight ml-3 min-w-0 group-data-[collapsible=icon]:hidden">
                       <div className="flex justify-between items-center w-full min-w-0">
-                        <span className="truncate font-medium flex-1 min-w-0 mr-2">
-                          {displayName}
+                        <span className="flex items-center gap-1.5 font-medium flex-1 min-w-0 mr-2">
+                          <span className="truncate">{displayName}</span>
+                          <ChatNotificationStatus chatID={chat.id} />
                         </span>
                         <div className="flex items-center gap-1 pr-1 shrink-0">
                           {chat.type !== "group" &&
@@ -237,6 +244,7 @@ export function NavChat({
                   <DropdownMenu
                     open={activeMenu === menuId}
                     onOpenChange={(open) => {
+                      if (open) setNotificationMenuId(null);
                       setActiveMenu(open ? menuId : null);
                     }}
                   >
@@ -255,104 +263,115 @@ export function NavChat({
                       </SidebarMenuAction>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
-                      className="w-fit rounded-lg"
+                      className="w-fit max-w-[calc(100vw-1rem)] rounded-lg"
                       side={isMobile ? "left" : "right"}
                       align={"center"}
                       onCloseAutoFocus={(e) => e.preventDefault()}
                     >
-                      <DropdownMenuItem
-                        onSelect={(e) => {
-                          e.preventDefault();
-                          setActiveMenu(null);
-                          setTimeout(() => setChatToDelete(chat), 100);
-                        }}
-                        className={cn(
-                          chat.type === "group" && chat.my_role === "owner"
-                            ? "text-destructive focus:text-destructive"
-                            : ""
-                        )}
-                      >
-                        {chat.type === "group" ? (
-                          chat.my_role === "owner" ? (
-                            <>
-                              <Trash2 className="mr-2 size-4" />
-                              <span>Delete Group</span>
-                            </>
-                          ) : (
-                            <>
-                              <LogOut className="text-muted-foreground mr-2 size-4" />
-                              <span>Leave Group</span>
-                            </>
-                          )
-                        ) : (
-                          <>
-                            <Trash2 className="text-muted-foreground mr-2 size-4" />
-                            <span>Delete Chat</span>
-                          </>
-                        )}
-                      </DropdownMenuItem>
-
-                      {chat.type === "group" && chat.my_role === "member" && (
-                        <DropdownMenuItem
-                          onSelect={(e) => {
-                            e.preventDefault();
-                            setActiveMenu(null);
-                            setReportTarget({
-                              type: "group",
-                              id: chat.id,
-                              name: chat.name,
-                            });
-                            setIsReportOpen(true);
-                          }}
-                        >
-                          <Flag className="text-muted-foreground mr-2 size-4" />
-                          <span>Report Group</span>
-                        </DropdownMenuItem>
-                      )}
-
-                      {chat.type === "private" && chat.other_user_id && (
+                      <ChatNotificationItems
+                        chatID={chat.id}
+                        onOpenMobile={isMobile ? () => setNotificationMenuId(menuId) : undefined}
+                        mobileOpen={isMobile && notificationMenuId === menuId}
+                        onBack={() => setNotificationMenuId(null)}
+                      />
+                      {!(isMobile && notificationMenuId === menuId) && (
                         <>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             onSelect={(e) => {
                               e.preventDefault();
                               setActiveMenu(null);
-                              setReportTarget({
-                                type: "user",
-                                id: chat.other_user_id!,
-                                name: chat.name,
-                              });
-                              setIsReportOpen(true);
+                              setChatToDelete(chat);
                             }}
+                            className={cn(
+                              chat.type === "group" && chat.my_role === "owner"
+                                ? "text-destructive focus:text-destructive"
+                                : ""
+                            )}
                           >
-                            <Flag className="text-muted-foreground mr-2 size-4" />
-                            <span>Report User</span>
+                            {chat.type === "group" ? (
+                              chat.my_role === "owner" ? (
+                                <>
+                                  <Trash2 className="mr-2 size-4" />
+                                  <span>Delete Group</span>
+                                </>
+                              ) : (
+                                <>
+                                  <LogOut className="text-muted-foreground mr-2 size-4" />
+                                  <span>Leave Group</span>
+                                </>
+                              )
+                            ) : (
+                              <>
+                                <Trash2 className="text-muted-foreground mr-2 size-4" />
+                                <span>Delete Chat</span>
+                              </>
+                            )}
                           </DropdownMenuItem>
 
-                          {!chat.other_user_is_deleted &&
-                            (chat.is_blocked_by_me ? (
+                          {chat.type === "group" && chat.my_role === "member" && (
+                            <DropdownMenuItem
+                              onSelect={(e) => {
+                                e.preventDefault();
+                                setActiveMenu(null);
+                                setReportTarget({
+                                  type: "group",
+                                  id: chat.id,
+                                  name: chat.name,
+                                });
+                                setIsReportOpen(true);
+                              }}
+                            >
+                              <Flag className="text-muted-foreground mr-2 size-4" />
+                              <span>Report Group</span>
+                            </DropdownMenuItem>
+                          )}
+
+                          {chat.type === "private" && chat.other_user_id && (
+                            <>
+                              <DropdownMenuSeparator />
                               <DropdownMenuItem
                                 onSelect={(e) => {
                                   e.preventDefault();
                                   setActiveMenu(null);
-                                  setTimeout(() => setUserToUnblock(chat.other_user_id!), 100);
+                                  setReportTarget({
+                                    type: "user",
+                                    id: chat.other_user_id!,
+                                    name: chat.name,
+                                  });
+                                  setIsReportOpen(true);
                                 }}
                               >
-                                <Unlock className="text-muted-foreground mr-2 size-4" />
-                                <span>Unblock User</span>
+                                <Flag className="text-muted-foreground mr-2 size-4" />
+                                <span>Report User</span>
                               </DropdownMenuItem>
-                            ) : (
-                              <DropdownMenuItem
-                                onSelect={(e) => {
-                                  e.preventDefault();
-                                  setActiveMenu(null);
-                                  setTimeout(() => setUserToBlock(chat.other_user_id!), 100);
-                                }}
-                              >
-                                <Ban className="text-muted-foreground mr-2 size-4" />
-                                <span>Block User</span>
-                              </DropdownMenuItem>
-                            ))}
+
+                              {!chat.other_user_is_deleted &&
+                                (chat.is_blocked_by_me ? (
+                                  <DropdownMenuItem
+                                    onSelect={(e) => {
+                                      e.preventDefault();
+                                      setActiveMenu(null);
+                                      setUserToUnblock(chat.other_user_id!);
+                                    }}
+                                  >
+                                    <Unlock className="text-muted-foreground mr-2 size-4" />
+                                    <span>Unblock User</span>
+                                  </DropdownMenuItem>
+                                ) : (
+                                  <DropdownMenuItem
+                                    onSelect={(e) => {
+                                      e.preventDefault();
+                                      setActiveMenu(null);
+                                      setUserToBlock(chat.other_user_id!);
+                                    }}
+                                  >
+                                    <Ban className="text-muted-foreground mr-2 size-4" />
+                                    <span>Block User</span>
+                                  </DropdownMenuItem>
+                                ))}
+                            </>
+                          )}
                         </>
                       )}
                     </DropdownMenuContent>

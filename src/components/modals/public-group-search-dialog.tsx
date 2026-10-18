@@ -19,7 +19,7 @@ export function PublicGroupSearchDialog({ isOpen, onClose }: PublicGroupSearchDi
   const { isCreatingGroup, resetGroupForm } = form;
 
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen) {
       setSearch("");
       setDebouncedSearch("");
       setActiveTab("find");

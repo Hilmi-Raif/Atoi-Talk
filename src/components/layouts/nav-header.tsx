@@ -40,6 +40,14 @@ export function NavHeader() {
   const navigate = useNavigate();
   const isBusy = useUIStore((state) => state.isBusy);
 
+  useEffect(() => {
+    if (open) {
+      setCreatingChatId(null);
+      setSearch("");
+      setDebouncedSearch("");
+    }
+  }, [open]);
+
   const trimmedSearch = debouncedSearch.trim();
   const {
     data: searchResults,
@@ -85,12 +93,6 @@ export function NavHeader() {
 
       setOpen(false);
       navigate(`/chat/${newChat.id}`, { state: { initialUser: freshUser } });
-
-      setTimeout(() => {
-        setCreatingChatId(null);
-        setSearch("");
-        setDebouncedSearch("");
-      }, 500);
     } catch (error) {
       errorLog("Failed to create chat", error);
       toast.error("Failed to start conversation");
@@ -100,7 +102,7 @@ export function NavHeader() {
 
   const handleDialogChange = (val: boolean) => {
     if (creatingChatId) return;
-    if (!val) {
+    if (val) {
       setSearch("");
       setDebouncedSearch("");
     }

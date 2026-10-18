@@ -5,14 +5,16 @@ import * as path from "node:path";
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
     VitePWA({
       registerType: "autoUpdate",
-      injectRegister: "auto",
+      injectRegister: false,
+      strategies: "injectManifest",
+      srcDir: "src",
+      filename: "sw.ts",
       pwaAssets: {
         config: true,
         image: "public/pwa.png",
@@ -33,12 +35,8 @@ export default defineConfig({
         categories: ["social", "communication"],
         lang: "en",
       },
-      workbox: {
-        cleanupOutdatedCaches: true,
-        clientsClaim: true,
-        skipWaiting: true,
+      injectManifest: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,woff2}"],
-        navigateFallbackDenylist: [/^\/api\//],
       },
     }),
   ],

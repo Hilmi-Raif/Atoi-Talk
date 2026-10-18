@@ -31,6 +31,7 @@ export default function MobileChatListPage() {
   const chats =
     data?.pages.flatMap((page) => page.data).filter((chat) => chat.last_message !== null) || [];
   const isChatListEmpty = chats.length === 0 && !searchQuery && !isLoading && !isError;
+  const isSearchEmpty = chats.length === 0 && !!searchQuery.trim() && !isLoading && !isError;
 
   const { scrollRef, handleScroll, handleWheel } = useChatListScroll({
     hasNextPage: hasNextPage ?? false,
@@ -97,11 +98,12 @@ export default function MobileChatListPage() {
             onWheel={handleWheel}
             ref={scrollRef}
           >
-            {isChatListEmpty ? (
-              <div className="flex min-h-full items-center justify-center px-4 py-10">
-                <div className="inline-flex items-center justify-center rounded-full border bg-background px-3 py-1 text-xs font-normal text-foreground">
-                  Select a chat and start messaging
-                </div>
+            {isSearchEmpty || isChatListEmpty ? (
+              <div
+                role="status"
+                className="flex min-h-full items-center justify-center px-4 py-10 text-center text-sm text-muted-foreground"
+              >
+                No chats found.
               </div>
             ) : (
               <NavChat

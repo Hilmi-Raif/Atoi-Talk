@@ -62,7 +62,7 @@ export function BlockedUsersDialog({
       <Dialog
         open={open}
         onOpenChange={(val) => {
-          if (!val) {
+          if (val) {
             setBlockedSearch("");
             setDebouncedBlockedSearch("");
             setHasLoadedBlockedUsers(false);
