@@ -17,7 +17,7 @@ import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner as UiSpinner } from "@/components/ui/spinner";
 import { toast } from "@/lib/toast";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { UserDetailContent } from "./user-detail-content";
 
 interface UserBanDialogProps {
@@ -30,6 +30,12 @@ interface UserBanDialogProps {
 export function UserBanDialog({ open, onOpenChange, userId, onSuccess }: UserBanDialogProps) {
   const [reason, setReason] = useState("");
   const [duration, setDuration] = useState("");
+  useEffect(() => {
+    if (open) {
+      setReason("");
+      setDuration("");
+    }
+  }, [open]);
   const queryClient = useQueryClient();
 
   const banMutation = useMutation({
@@ -39,8 +45,6 @@ export function UserBanDialog({ open, onOpenChange, userId, onSuccess }: UserBan
       queryClient.invalidateQueries({ queryKey: ["admin-group-members-infinite"] });
       toast.success("User banned successfully");
       onOpenChange(false);
-      setReason("");
-      setDuration("");
       if (onSuccess) onSuccess();
     },
     onError: () => toast.error("Failed to ban user"),
@@ -108,6 +112,13 @@ export function UserResetDialog({ open, onOpenChange, userId, onSuccess }: UserR
   const [resetAvatar, setResetAvatar] = useState(false);
   const [resetBio, setResetBio] = useState(false);
   const [resetName, setResetName] = useState(false);
+  useEffect(() => {
+    if (open) {
+      setResetAvatar(false);
+      setResetBio(false);
+      setResetName(false);
+    }
+  }, [open]);
   const queryClient = useQueryClient();
 
   const resetMutation = useMutation({
@@ -124,9 +135,6 @@ export function UserResetDialog({ open, onOpenChange, userId, onSuccess }: UserR
       queryClient.invalidateQueries({ queryKey: ["admin-group-members-infinite"] });
       toast.success("User info reset successfully");
       onOpenChange(false);
-      setResetAvatar(false);
-      setResetBio(false);
-      setResetName(false);
       if (onSuccess) onSuccess();
     },
     onError: () => toast.error("Failed to reset user info"),

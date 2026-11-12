@@ -34,8 +34,6 @@ const ChatHeader = ({
   isProfileError,
   isProfileLoading,
   onRetryProfile,
-  isChatLoading,
-  isChatFetching,
   isChatError,
   onRetryChat,
 }: ChatHeaderProps) => {
@@ -60,8 +58,7 @@ const ChatHeader = ({
 
   const initials = getInitials(displayName);
   const hasMemberCount = displayChat.type === "group" && displayChat.member_count != null;
-  const isGroupInfoLoading =
-    displayChat.type === "group" && (isChatLoading || isChatFetching || !hasMemberCount);
+  const isGroupInfoLoading = displayChat.type === "group" && !hasMemberCount;
 
   let statusContent: React.ReactNode = "Messages";
   let statusColor = "text-muted-foreground";
@@ -196,7 +193,9 @@ const ChatHeader = ({
                 {isProfileLoading || isGroupInfoLoading ? (
                   <Skeleton className="h-[13px] w-32 mb-1" />
                 ) : (
-                  <span className="truncate font-medium">{displayName}</span>
+                  <span className="flex items-center gap-1.5 min-w-0">
+                    <span className="truncate font-medium">{displayName}</span>
+                  </span>
                 )}
                 <div className={`truncate text-xs ${statusColor} min-h-[16px] flex items-center`}>
                   {statusContent}

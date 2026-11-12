@@ -27,6 +27,7 @@ vi.mock("react-router-dom", async () => {
 });
 
 vi.mock("@/store", () => ({
+  useAuthStore: (selector: any) => selector({ token: null }),
   useUIStore: (selector: any) => selector({ setGlobalLoading: mockSetGlobalLoading }),
 }));
 
@@ -172,6 +173,14 @@ describe("NavFooter Component", () => {
     renderComponent({ activeMenu: "footer-menu" });
 
     expect(screen.getAllByRole("separator")).toHaveLength(2);
+  });
+
+  it("closes the account dropdown immediately when opening its dialog", () => {
+    const setActiveMenu = vi.fn();
+    renderComponent({ activeMenu: "footer-menu", setActiveMenu });
+    fireEvent.click(screen.getByRole("menuitem", { name: "Account" }));
+    expect(setActiveMenu).toHaveBeenCalledWith(null);
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 
   it("opens account settings and updates profile", async () => {

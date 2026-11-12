@@ -37,7 +37,7 @@ export function UserProfileDialog() {
   };
 
   useEffect(() => {
-    if (!isOpen) setIsAvatarLoaded(false);
+    if (isOpen) setIsAvatarLoaded(false);
   }, [isOpen]);
 
   useEffect(() => {

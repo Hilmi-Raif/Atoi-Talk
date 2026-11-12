@@ -197,25 +197,34 @@ export function useSendMessage() {
         }
       );
 
-      queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
-        { queryKey: ["chats"] },
-        (oldData) => {
-          if (!oldData) return oldData;
-          const newPages = oldData.pages.map((page) => ({
-            ...page,
-            data: page.data.map((chat) => {
-              if (chat.id === newMessage.chat_id) {
-                return {
-                  ...chat,
-                  last_message: newMessage,
-                };
-              }
-              return chat;
-            }),
-          }));
-          return { ...oldData, pages: newPages };
-        }
-      );
+      for (const [queryKey] of queryClient.getQueriesData({ queryKey: ["chats"] })) {
+        queryClient.setQueryData<InfiniteData<PaginatedResponse<ChatListItem>>>(
+          queryKey,
+          (oldData) => {
+            if (!oldData) return oldData;
+            const detail = queryClient.getQueryData<ChatListItem>(["chat", newMessage.chat_id]);
+            const exists = oldData.pages.some((page) =>
+              page.data.some((chat) => chat.id === newMessage.chat_id)
+            );
+            const newPages = oldData.pages.map((page, index) => ({
+              ...page,
+              data: (index === 0 && !queryKey[1] && !exists && detail
+                ? [detail, ...page.data]
+                : page.data
+              ).map((chat) => {
+                if (chat.id === newMessage.chat_id) {
+                  return {
+                    ...chat,
+                    last_message: newMessage,
+                  };
+                }
+                return chat;
+              }),
+            }));
+            return { ...oldData, pages: newPages };
+          }
+        );
+      }
 
       queryClient.setQueryData<ChatListItem>(["chat", newMessage.chat_id], (oldChat) => {
         if (!oldChat) return oldChat;
@@ -248,9 +257,14 @@ export function useDeleteMessage() {
           if (!old) return old;
           const newPages = old.pages.map((page) => ({
             ...page,
-            data: page.data.map((msg) =>
-              msg.id === messageId ? { ...msg, deleted_at: new Date().toISOString() } : msg
-            ),
+            data: page.data.map((msg) => {
+              const deletedAt = new Date().toISOString();
+              if (msg.id === messageId) return { ...msg, deleted_at: deletedAt };
+              if (msg.reply_to?.id === messageId) {
+                return { ...msg, reply_to: { ...msg.reply_to, deleted_at: deletedAt } };
+              }
+              return msg;
+            }),
           }));
           return { ...old, pages: newPages };
         }

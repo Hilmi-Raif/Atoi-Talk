@@ -28,6 +28,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const chats =
     data?.pages.flatMap((page) => page.data).filter((chat) => chat.last_message !== null) || [];
   const isChatListEmpty = chats.length === 0 && !searchQuery && !isLoading && !isError;
+  const isSearchEmpty = chats.length === 0 && !!searchQuery.trim() && !isLoading && !isError;
 
   const { scrollRef, handleScroll, handleWheel } = useChatListScroll({
     hasNextPage: hasNextPage ?? false,
@@ -78,16 +79,25 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           initialValue={searchQuery}
           disabled={isChatListEmpty}
         />
-        <NavChat
-          chats={chats}
-          activeMenu={activeMenu}
-          setActiveMenu={setActiveMenu}
-          isLoading={isLoading}
-          isFetchingNextPage={isFetchingNextPage}
-          hasNextPage={hasNextPage}
-          isError={isError}
-          refetch={refetch}
-        />
+        {isSearchEmpty || isChatListEmpty ? (
+          <div
+            role="status"
+            className="flex flex-1 items-center justify-center px-4 text-center text-sm text-muted-foreground group-data-[collapsible=icon]:hidden"
+          >
+            No chats found.
+          </div>
+        ) : (
+          <NavChat
+            chats={chats}
+            activeMenu={activeMenu}
+            setActiveMenu={setActiveMenu}
+            isLoading={isLoading}
+            isFetchingNextPage={isFetchingNextPage}
+            hasNextPage={hasNextPage}
+            isError={isError}
+            refetch={refetch}
+          />
+        )}
       </SidebarContent>
       <SidebarFooter className="bg-background">
         {currentUser && (

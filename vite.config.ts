@@ -5,14 +5,16 @@ import * as path from "node:path";
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
     VitePWA({
       registerType: "autoUpdate",
-      injectRegister: "auto",
+      injectRegister: false,
+      strategies: "injectManifest",
+      srcDir: "src",
+      filename: "sw.ts",
       pwaAssets: {
         config: true,
         image: "public/pwa.png",
@@ -33,12 +35,8 @@ export default defineConfig({
         categories: ["social", "communication"],
         lang: "en",
       },
-      workbox: {
-        cleanupOutdatedCaches: true,
-        clientsClaim: true,
-        skipWaiting: true,
+      injectManifest: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,woff2}"],
-        navigateFallbackDenylist: [/^\/api\//],
       },
     }),
   ],
@@ -48,10 +46,18 @@ export default defineConfig({
     },
   },
   test: {
+    include: ["src/**/*.test.{ts,tsx}"],
     globals: true,
     environment: "jsdom",
     setupFiles: ["./test/setup.ts"],
     css: false,
+    coverage: {
+      provider: "v8",
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: ["src/**/*.test.{ts,tsx}", "src/**/__tests__/**", "src/**/*.d.ts", "src/types/**"],
+      reporter: ["text-summary", "json-summary", "json", "html"],
+      thresholds: { lines: 90, statements: 90, functions: 90, branches: 90 },
+    },
   },
   build: {
     rollupOptions: {

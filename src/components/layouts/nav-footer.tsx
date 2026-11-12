@@ -1,4 +1,5 @@
 import { DeleteAccountDialog } from "@/components/modals/delete-account-dialog";
+import { PushNotificationMenuItem } from "@/components/push-notification-menu-item";
 import { useCurrentUser, useLogout } from "@/hooks/queries";
 import { queryClient } from "@/lib/query-client";
 import { toast } from "@/lib/toast";
@@ -9,6 +10,7 @@ import { getInitials } from "@/lib/avatar-utils";
 import {
   AlertTriangle,
   Ban,
+  Bell,
   ChevronsUpDown,
   CircleUserRound,
   DoorOpen,
@@ -52,6 +54,7 @@ export function NavFooter({
   mode?: "app" | "admin";
 }) {
   const [openAccount, setOpenAccount] = useState(false);
+  const [openNotifications, setOpenNotifications] = useState(false);
   const [openSecurity, setOpenSecurity] = useState(false);
   const [openLogout, setOpenLogout] = useState(false);
   const [openChangeEmail, setOpenChangeEmail] = useState(false);
@@ -119,13 +122,11 @@ export function NavFooter({
               sideOffset={4}
             >
               <DropdownMenuGroup>
-                <DropdownMenuItem
-                  onSelect={(e) => {
-                    e.preventDefault();
-                    setOpenAccount(true);
-                    setTimeout(() => setActiveMenu(null), 150);
-                  }}
-                >
+                <DropdownMenuItem onSelect={() => setOpenNotifications(true)}>
+                  <Bell />
+                  Notifications
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setOpenAccount(true)}>
                   <CircleUserRound />
                   Account
                 </DropdownMenuItem>
@@ -218,23 +219,21 @@ export function NavFooter({
         </SidebarMenuItem>
       </SidebarMenu>
 
-      {openAccount && (
-        <MyProfileDialog
-          open={openAccount}
-          onOpenChange={setOpenAccount}
-          user={activeUser}
-          onOpenSecurity={() => setOpenSecurity(true)}
-          onOpenChangeEmail={() => setOpenChangeEmail(true)}
-        />
-      )}
+      <PushNotificationMenuItem open={openNotifications} onOpenChange={setOpenNotifications} />
 
-      {openChangeEmail && (
-        <ChangeEmailDialog
-          open={openChangeEmail}
-          onOpenChange={setOpenChangeEmail}
-          user={activeUser}
-        />
-      )}
+      <MyProfileDialog
+        open={openAccount}
+        onOpenChange={setOpenAccount}
+        user={activeUser}
+        onOpenSecurity={() => setOpenSecurity(true)}
+        onOpenChangeEmail={() => setOpenChangeEmail(true)}
+      />
+
+      <ChangeEmailDialog
+        open={openChangeEmail}
+        onOpenChange={setOpenChangeEmail}
+        user={activeUser}
+      />
 
       <SecurityDialog open={openSecurity} onOpenChange={setOpenSecurity} user={activeUser} />
 

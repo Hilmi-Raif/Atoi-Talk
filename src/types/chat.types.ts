@@ -1,13 +1,7 @@
 import { Message } from "./message.types";
 
-/**
- * Chat type enum
- */
 export type ChatType = "private" | "group";
 
-/**
- * Group member info
- */
 export interface GroupMember {
   id: string;
   user_id: string;
@@ -19,10 +13,9 @@ export interface GroupMember {
   is_online?: boolean;
 }
 
-/**
- * Chat list item response (for sidebar)
- */
 export interface ChatListItem {
+  muted_forever?: boolean;
+  muted_until?: string | null;
   id: string;
   type: ChatType;
   name: string;
@@ -48,18 +41,12 @@ export interface ChatListItem {
   invite_expires_at?: string | null;
 }
 
-/**
- * Chat creation response
- */
 export interface ChatResponse {
   id: string;
   type: ChatType;
   created_at: string;
 }
 
-/**
- * Create private chat request
- */
 export interface CreatePrivateChatRequest {
   target_user_id: string;
 }
@@ -80,18 +67,12 @@ export interface UpdateGroupRequest {
   delete_avatar?: boolean;
 }
 
-/**
- * Get chats query parameters
- */
 export interface GetChatsParams {
   query?: string;
   cursor?: string;
   limit?: number;
 }
 
-/**
- * Public group DTO
- */
 export interface PublicGroupDTO {
   id: string;
   name: string;

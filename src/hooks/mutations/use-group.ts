@@ -121,7 +121,9 @@ export const useLeaveGroup = (callback?: (chatId: string) => void) => {
     mutationFn: (chatId: string) => chatService.leaveGroup(chatId),
     onSuccess: (_data, chatId) => {
       if (callback) callback(chatId);
-      setActiveChatId(null);
+      if (useChatStore.getState().activeChatId === chatId) {
+        setActiveChatId(null);
+      }
 
       const allChats = queryClient.getQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>({
         queryKey: ["chats"],
@@ -390,6 +392,9 @@ export const useTransferOwnership = () => {
                 if (member.user_id === newOwnerId) {
                   return { ...member, role: "owner" };
                 }
+                if (member.role === "owner") {
+                  return { ...member, role: "admin" };
+                }
                 return member;
               }),
             })),
@@ -397,6 +402,24 @@ export const useTransferOwnership = () => {
         }
       );
 
+      queryClient.setQueryData<ChatListItem>(["chat", chatId], (chat) =>
+        chat?.my_role === "owner" ? { ...chat, my_role: "admin" } : chat
+      );
+      queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
+        { queryKey: ["chats"] },
+        (data) =>
+          data && {
+            ...data,
+            pages: data.pages.map((page) => ({
+              ...page,
+              data: page.data.map((chat) =>
+                chat.id === chatId && chat.my_role === "owner"
+                  ? { ...chat, my_role: "admin" }
+                  : chat
+              ),
+            })),
+          }
+      );
       toast.success("Ownership transferred successfully");
     },
     onError: (error) => {

@@ -3,9 +3,31 @@ import { CheckIcon, ChevronRightIcon, CircleIcon } from "lucide-react";
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
+import { ExitContent } from "./exit-content";
 
-function DropdownMenu({ ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
-  return <DropdownMenuPrimitive.Root data-slot="dropdown-menu" {...props} />;
+const MenuOpenContext = React.createContext(true);
+
+function DropdownMenu({
+  open,
+  defaultOpen = false,
+  onOpenChange,
+  ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
+  const [internalOpen, setInternalOpen] = React.useState(defaultOpen);
+  const visible = open ?? internalOpen;
+  return (
+    <MenuOpenContext.Provider value={visible}>
+      <DropdownMenuPrimitive.Root
+        data-slot="dropdown-menu"
+        {...props}
+        open={visible}
+        onOpenChange={(next) => {
+          setInternalOpen(next);
+          onOpenChange?.(next);
+        }}
+      />
+    </MenuOpenContext.Provider>
+  );
 }
 
 function DropdownMenuPortal({
@@ -23,8 +45,11 @@ function DropdownMenuTrigger({
 function DropdownMenuContent({
   className,
   sideOffset = 4,
+  onCloseAutoFocus,
+  children,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Content>) {
+  const open = React.useContext(MenuOpenContext);
   return (
     <DropdownMenuPrimitive.Portal>
       <DropdownMenuPrimitive.Content
@@ -35,7 +60,15 @@ function DropdownMenuContent({
           className
         )}
         {...props}
-      />
+        onCloseAutoFocus={(event) => {
+          onCloseAutoFocus?.(event);
+          if (document.querySelector('[data-slot="dialog-content"][data-state="open"]')) {
+            event.preventDefault();
+          }
+        }}
+      >
+        <ExitContent open={open}>{children}</ExitContent>
+      </DropdownMenuPrimitive.Content>
     </DropdownMenuPrimitive.Portal>
   );
 }
@@ -163,8 +196,28 @@ function DropdownMenuShortcut({ className, ...props }: React.ComponentProps<"spa
   );
 }
 
-function DropdownMenuSub({ ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.Sub>) {
-  return <DropdownMenuPrimitive.Sub data-slot="dropdown-menu-sub" {...props} />;
+function DropdownMenuSub({
+  open,
+  defaultOpen = false,
+  onOpenChange,
+  ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Sub>) {
+  const parentOpen = React.useContext(MenuOpenContext);
+  const [internalOpen, setInternalOpen] = React.useState(defaultOpen);
+  const visible = open ?? internalOpen;
+  return (
+    <MenuOpenContext.Provider value={parentOpen && visible}>
+      <DropdownMenuPrimitive.Sub
+        data-slot="dropdown-menu-sub"
+        {...props}
+        open={visible}
+        onOpenChange={(next) => {
+          setInternalOpen(next);
+          onOpenChange?.(next);
+        }}
+      />
+    </MenuOpenContext.Provider>
+  );
 }
 
 function DropdownMenuSubTrigger({
@@ -193,8 +246,10 @@ function DropdownMenuSubTrigger({
 
 function DropdownMenuSubContent({
   className,
+  children,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.SubContent>) {
+  const open = React.useContext(MenuOpenContext);
   return (
     <DropdownMenuPrimitive.SubContent
       data-slot="dropdown-menu-sub-content"
@@ -203,7 +258,9 @@ function DropdownMenuSubContent({
         className
       )}
       {...props}
-    />
+    >
+      <ExitContent open={open}>{children}</ExitContent>
+    </DropdownMenuPrimitive.SubContent>
   );
 }
 

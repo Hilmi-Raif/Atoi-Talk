@@ -1,5 +1,6 @@
 import { DeleteAccountDialog } from "@/components/modals/delete-account-dialog";
 import { useTheme } from "@/components/providers/theme-provider";
+import { PushNotificationMenuItem } from "@/components/push-notification-menu-item";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import {
@@ -19,6 +20,7 @@ import { User } from "@/types";
 import {
   AlertTriangle,
   Ban,
+  Bell,
   CircleUserRound,
   DoorOpen,
   LayoutDashboard,
@@ -35,6 +37,7 @@ import { SecurityDialog } from "./nav-footer/security-dialog";
 
 export function MobileUserMenu({ current }: { current: User }) {
   const [openAccount, setOpenAccount] = useState(false);
+  const [openNotifications, setOpenNotifications] = useState(false);
   const [openSecurity, setOpenSecurity] = useState(false);
   const [openLogout, setOpenLogout] = useState(false);
   const [openChangeEmail, setOpenChangeEmail] = useState(false);
@@ -88,6 +91,10 @@ export function MobileUserMenu({ current }: { current: User }) {
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-56 rounded-lg" side="bottom" align="end" sideOffset={8}>
           <DropdownMenuGroup>
+            <DropdownMenuItem onSelect={() => setOpenNotifications(true)}>
+              <Bell />
+              Notifications
+            </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => setOpenAccount(true)}>
               <CircleUserRound />
               Account
@@ -149,23 +156,21 @@ export function MobileUserMenu({ current }: { current: User }) {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {openAccount && (
-        <MyProfileDialog
-          open={openAccount}
-          onOpenChange={setOpenAccount}
-          user={activeUser}
-          onOpenSecurity={() => setOpenSecurity(true)}
-          onOpenChangeEmail={() => setOpenChangeEmail(true)}
-        />
-      )}
+      <PushNotificationMenuItem open={openNotifications} onOpenChange={setOpenNotifications} />
 
-      {openChangeEmail && (
-        <ChangeEmailDialog
-          open={openChangeEmail}
-          onOpenChange={setOpenChangeEmail}
-          user={activeUser}
-        />
-      )}
+      <MyProfileDialog
+        open={openAccount}
+        onOpenChange={setOpenAccount}
+        user={activeUser}
+        onOpenSecurity={() => setOpenSecurity(true)}
+        onOpenChangeEmail={() => setOpenChangeEmail(true)}
+      />
+
+      <ChangeEmailDialog
+        open={openChangeEmail}
+        onOpenChange={setOpenChangeEmail}
+        user={activeUser}
+      />
 
       <SecurityDialog open={openSecurity} onOpenChange={setOpenSecurity} user={activeUser} />
 

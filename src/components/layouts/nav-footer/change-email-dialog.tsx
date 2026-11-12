@@ -18,7 +18,7 @@ import { useUIStore } from "@/store";
 import { ApiError, User } from "@/types";
 import { AxiosError } from "axios";
 import { AnimatePresence, motion } from "motion/react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 
@@ -65,6 +65,14 @@ export function ChangeEmailDialog({
 
   const navigate = useNavigate();
   const setGlobalLoading = useUIStore((state) => state.setGlobalLoading);
+
+  useEffect(() => {
+    if (open) {
+      setEmailData({ newEmail: "", otp: "" });
+      setEmailErrors({});
+      setIsEmailSubmitting(false);
+    }
+  }, [open]);
 
   const validateEmailField = (field: keyof EmailErrors, value: string) => {
     if (field === "newEmail" && value === user.email) {
@@ -173,13 +181,6 @@ export function ChangeEmailDialog({
       onOpenChange={(val) => {
         if (!isEmailSubmitting && !isSendingOTP) {
           onOpenChange(val);
-          if (!val) {
-            setTimeout(() => {
-              setEmailData({ newEmail: "", otp: "" });
-              setEmailErrors({});
-              setIsEmailSubmitting(false);
-            }, 300);
-          }
         }
       }}
     >

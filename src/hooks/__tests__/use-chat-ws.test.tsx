@@ -23,6 +23,7 @@ vi.mock("@/store", () => {
     }),
     useChatStore: createMockStore({
       activeChatId: "chat-1",
+      recentlyDeletedChatIds: new Set<string>(),
       isTyping: {},
       setTyping: vi.fn(),
       setUserTyping: vi.fn(),
@@ -85,12 +86,69 @@ describe("useChatWebSocket Hook", () => {
   });
 
   afterEach(() => {
+    queryClient.clear();
     global.WebSocket = originalWebSocket;
   });
 
   const wrapper = ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
+
+  it.each(["user.banned", "user.deleted", "user.unbanned", "user.offline"])(
+    "reconciles private conversation state for %s",
+    (type) => {
+      const chat = {
+        id: "chat-1",
+        type: "private",
+        other_user_id: "u2",
+        is_online: true,
+        other_user_is_banned: true,
+        other_user_is_deleted: false,
+      };
+      queryClient.setQueryData(["chats"], { pages: [{ data: [chat] }], pageParams: [null] });
+      queryClient.setQueryData(["chat", "chat-1"], chat);
+      renderHook(() => useChatWebSocket("ws://test.com"), { wrapper });
+      act(() =>
+        getMockWebSocket().onmessage({ data: JSON.stringify({ type, payload: { user_id: "u2" } }) })
+      );
+      const cached = queryClient.getQueryData<{ pages: { data: (typeof chat)[] }[] }>(["chats"])!
+        .pages[0].data[0];
+      if (type === "user.unbanned") expect(cached.other_user_is_banned).toBe(false);
+      else expect(cached.is_online).toBe(false);
+      if (type === "user.deleted") expect(cached.other_user_is_deleted).toBe(true);
+      if (type === "user.banned") expect(cached.other_user_is_banned).toBe(true);
+    }
+  );
+
+  it.each(["chat.hide", "chat.delete"])(
+    "removes the correct sidebar conversation for %s",
+    (type) => {
+      queryClient.setQueryData(["chats"], {
+        pages: [{ data: [{ id: "chat-1" }, { id: "other" }] }],
+        pageParams: [null],
+      });
+      renderHook(() => useChatWebSocket("ws://test.com"), { wrapper });
+      act(() =>
+        getMockWebSocket().onmessage({
+          data: JSON.stringify({ type, payload: { chat_id: "chat-1", id: "chat-1" } }),
+        })
+      );
+      expect(queryClient.getQueryData(["chats"])).toMatchObject({
+        pages: [{ data: [{ id: "other" }] }],
+      });
+    }
+  );
+
+  it("ignores unknown events and malformed json without changing cached conversations", () => {
+    const data = { pages: [{ data: [{ id: "chat-1" }] }], pageParams: [null] };
+    queryClient.setQueryData(["chats"], data);
+    renderHook(() => useChatWebSocket("ws://test.com"), { wrapper });
+    act(() => {
+      getMockWebSocket().onmessage({ data: JSON.stringify({ type: "future.event", payload: {} }) });
+      getMockWebSocket().onmessage({ data: "not json" });
+    });
+    expect(queryClient.getQueryData(["chats"])).toEqual(data);
+  });
 
   it("connects to WebSocket on mount", async () => {
     renderHook(() => useChatWebSocket("ws://test.com"), { wrapper });

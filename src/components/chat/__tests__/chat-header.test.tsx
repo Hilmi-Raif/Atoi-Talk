@@ -2,6 +2,10 @@ import ChatHeader from "@/components/chat/chat-header";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("@/components/modals/group-profile-dialog", () => ({
+  GroupProfileDialog: () => null,
+  default: () => null,
+}));
 const mockNavigate = vi.fn();
 let mockIsMobile = true;
 let mockIsBusy = false;
@@ -109,5 +113,23 @@ describe("ChatHeader", () => {
     expect(backButton).toBeDisabled();
     fireEvent.click(backButton);
     expect(mockNavigate).not.toHaveBeenCalled();
+  });
+  it("keeps loaded group details visible during background refetch", () => {
+    render(
+      <ChatHeader
+        chat={{
+          id: "group-a",
+          type: "group",
+          name: "Friends",
+          avatar: null,
+          unread_count: 0,
+          last_message: null,
+          member_count: 4,
+        }}
+        partnerId={null}
+        isChatFetching
+      />
+    );
+    expect(screen.getByText("Friends")).toBeInTheDocument();
   });
 });

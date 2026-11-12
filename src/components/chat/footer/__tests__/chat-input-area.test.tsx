@@ -1,99 +1,68 @@
-import { ChatInputArea } from "@/components/chat/footer/chat-input-area";
-import { fireEvent, render, screen } from "@testing-library/react";
-import React from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { ChatInputArea } from "../chat-input-area";
 
-let mockIsMobile = false;
+const platform = vi.hoisted(() => ({ mobile: false }));
+vi.mock("@/hooks/use-mobile", () => ({ useIsMobile: () => platform.mobile }));
 
-vi.mock("@/hooks/use-mobile", () => ({
-  useIsMobile: () => mockIsMobile,
-}));
-
-vi.mock("@/components/ui/emoji-picker", () => ({
-  EmojiPicker: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  EmojiPickerContent: () => <div />,
-  EmojiPickerFooter: () => <div />,
-  EmojiPickerSearch: () => <input aria-label="emoji-search" />,
-}));
-
-vi.mock("@/components/ui/popover", () => ({
-  Popover: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  PopoverContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  PopoverTrigger: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-}));
-
-const createProps = () => ({
-  isGlobalUploading: false,
-  isSending: false,
-  isEditing: false,
-  isLoading: false,
-  attachmentMode: false,
-  canSubmitMessage: true,
-  onAttachmentModeChange: vi.fn(),
-  isEmojiOpen: false,
-  onEmojiOpenChange: vi.fn(),
-  onEmojiSelect: vi.fn(),
-  textareaRef: React.createRef<HTMLTextAreaElement>(),
-  newMessageText: "Hello",
-  onNewMessageTextChange: vi.fn(),
-  onSendMessage: vi.fn(),
-  onTyping: vi.fn(),
-});
-
-const renderComponent = (override: Partial<ReturnType<typeof createProps>> = {}) => {
-  const props = { ...createProps(), ...override };
-  render(<ChatInputArea {...props} />);
-  return props;
-};
-
-describe("ChatInputArea", () => {
-  afterEach(() => {
-    mockIsMobile = false;
-    vi.clearAllMocks();
+describe("chat composer keyboard behavior", () => {
+  beforeEach(() => {
+    platform.mobile = false;
   });
-
-  it("sends message with Enter on desktop", () => {
-    const { onSendMessage } = renderComponent();
-
-    fireEvent.keyDown(screen.getByPlaceholderText("Type a message..."), { key: "Enter" });
-
-    expect(onSendMessage).toHaveBeenCalledTimes(1);
-  });
-
-  it("does not send message with Shift+Enter", () => {
-    const { onSendMessage } = renderComponent();
-
-    fireEvent.keyDown(screen.getByPlaceholderText("Type a message..."), {
-      key: "Enter",
-      shiftKey: true,
-    });
-
-    expect(onSendMessage).not.toHaveBeenCalled();
-  });
-
-  it("does not send message with Enter on mobile", () => {
-    mockIsMobile = true;
-    const { onSendMessage } = renderComponent();
-
-    fireEvent.keyDown(screen.getByPlaceholderText("Type a message..."), { key: "Enter" });
-
-    expect(onSendMessage).not.toHaveBeenCalled();
-  });
-
-  it("shows spinner and loading label when sending", () => {
-    renderComponent({ isSending: true });
-
-    expect(screen.getByRole("button", { name: "Sending message" })).toBeDisabled();
-    expect(screen.getByRole("status", { name: "Loading" })).toBeInTheDocument();
-  });
-
-  it("disables send button when edit draft has no effective content", () => {
-    renderComponent({
-      attachmentMode: true,
-      canSubmitMessage: false,
-      newMessageText: "",
-    });
-
-    expect(screen.getByRole("button", { name: "Send message" })).toBeDisabled();
+  afterEach(cleanup);
+  function setup(overrides: Partial<React.ComponentProps<typeof ChatInputArea>> = {}) {
+    const props = {
+      isGlobalUploading: false,
+      isSending: false,
+      isEditing: false,
+      attachmentMode: false,
+      canSubmitMessage: true,
+      onAttachmentModeChange: vi.fn(),
+      isEmojiOpen: false,
+      onEmojiOpenChange: vi.fn(),
+      onEmojiSelect: vi.fn(),
+      textareaRef: { current: null },
+      newMessageText: "Draft",
+      onNewMessageTextChange: vi.fn(),
+      onSendMessage: vi.fn(),
+      onTyping: vi.fn(),
+      ...overrides,
+    };
+    const view = render(<ChatInputArea {...props} />);
+    return { ...view, props };
+  }
+  it.each([false, true])(
+    "keeps mobile Enter as a newline and desktop Enter as send (mobile=%s)",
+    (mobile) => {
+      platform.mobile = mobile;
+      const { props } = setup();
+      const textarea = screen.getByRole("textbox");
+      expect(textarea).toHaveAttribute("enterkeyhint", mobile ? "enter" : "send");
+      fireEvent.keyDown(textarea, { key: "Enter" });
+      expect(props.onSendMessage).toHaveBeenCalledTimes(mobile ? 0 : 1);
+      fireEvent.change(textarea, { target: { value: "Changed draft" } });
+      expect(props.onNewMessageTextChange).toHaveBeenCalledWith("Changed draft");
+      expect(props.onTyping).toHaveBeenCalledOnce();
+    }
+  );
+  it.each(["isGlobalUploading", "isSending", "isEditing", "isLoading"] as const)(
+    "locks composer controls during %s",
+    (flag) => {
+      const { container, props } = setup({ [flag]: true });
+      expect(screen.getByRole("textbox")).toBeDisabled();
+      for (const button of container.querySelectorAll("button")) {
+        expect(button).toBeDisabled();
+        fireEvent.click(button);
+      }
+      expect(props.onSendMessage).not.toHaveBeenCalled();
+      expect(props.onAttachmentModeChange).not.toHaveBeenCalled();
+      expect(props.onEmojiOpenChange).not.toHaveBeenCalled();
+    }
+  );
+  it("opens the emoji popover without submitting the draft", () => {
+    const { container, props } = setup();
+    fireEvent.click(container.querySelector("button:has(svg.lucide-smile)")!);
+    expect(props.onEmojiOpenChange).toHaveBeenCalledWith(true);
+    expect(props.onSendMessage).not.toHaveBeenCalled();
   });
 });

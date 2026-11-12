@@ -17,7 +17,7 @@ import { useUIStore } from "@/store";
 import { ApiError, User } from "@/types";
 import { AxiosError } from "axios";
 import { AnimatePresence, motion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 
@@ -139,20 +139,17 @@ export function SecurityDialog({
     );
   };
 
+  useEffect(() => {
+    if (open) {
+      setSecurityData({ oldPassword: "", newPassword: "", confirmPassword: "" });
+      setSecurityErrors({});
+      setIsSecuritySubmitting(false);
+    }
+  }, [open]);
+
   const handleOpenChange = (open: boolean) => {
     if (!isSecuritySubmitting) {
       onOpenChange(open);
-      if (!open) {
-        setTimeout(() => {
-          setSecurityData({
-            oldPassword: "",
-            newPassword: "",
-            confirmPassword: "",
-          });
-          setSecurityErrors({});
-          setIsSecuritySubmitting(false);
-        }, 300);
-      }
     }
   };
 

@@ -75,7 +75,9 @@ export const useVirtuaChat = ({
   const sortedMessages = useMemo(
     () =>
       [...messages].sort(
-        (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        (a, b) =>
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime() ||
+          a.id.localeCompare(b.id)
       ),
     [messages]
   );

@@ -1,6 +1,3 @@
-/**
- * Message type enum
- */
 export type MessageType =
   | "text"
   | "image"
@@ -22,9 +19,6 @@ export type MediaUsage = "message_attachment" | "user_avatar" | "group_avatar";
 
 export type MediaUploadStatus = "pending" | "completed";
 
-/**
- * Media/Attachment data transfer object
- */
 export interface Media {
   id: string;
   url: string;
@@ -53,9 +47,6 @@ export interface UploadMediaResponse {
   expires_at: string;
 }
 
-/**
- * Reply preview for message replies
- */
 export interface ReplyPreview {
   id: string;
   sender_id: string;
@@ -69,9 +60,6 @@ export interface ReplyPreview {
   is_jumpable?: boolean;
 }
 
-/**
- * Message response from API
- */
 export interface Message {
   id: string;
   chat_id: string;
@@ -92,9 +80,6 @@ export interface Message {
   edited_at?: string | null;
 }
 
-/**
- * Send message request payload
- */
 export interface SendMessageRequest {
   chat_id: string;
   type: string;
@@ -103,17 +88,11 @@ export interface SendMessageRequest {
   reply_to_id?: string;
 }
 
-/**
- * Edit message request payload
- */
 export interface EditMessageRequest {
   content?: string;
   attachment_ids?: string[];
 }
 
-/**
- * Get messages query parameters
- */
 export interface GetMessagesParams {
   cursor?: string;
   limit?: number;
@@ -121,9 +100,6 @@ export interface GetMessagesParams {
   around_message_id?: string;
 }
 
-/**
- * Message with potentially deleted attachments for editing
- */
 export interface EditMessage extends Omit<Message, "attachments"> {
   attachments: (Media & { delete?: boolean })[];
 }

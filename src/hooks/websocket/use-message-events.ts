@@ -197,7 +197,7 @@ export const useMessageEvents = (
         }
 
         if (payload.type === "system_rename") {
-          const actionData = payload.action_data as { new_name?: string };
+          const actionData = (payload.action_data || {}) as { new_name?: string };
           if (actionData.new_name) {
             queryClient.setQueryData<ChatListItem>(["chat", payload.chat_id], (oldChat) => {
               if (!oldChat) return oldChat;

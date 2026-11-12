@@ -360,8 +360,12 @@ function SidebarContent({
       className={cn("flex min-h-0 flex-1 flex-col overflow-hidden", className)}
       {...props}
     >
-      <ScrollArea className="h-full" onScroll={onScroll} viewportRef={scrollRef}>
-        <div className="flex flex-col">{children}</div>
+      <ScrollArea
+        className="h-full [&_[data-slot=scroll-area-viewport]>div]:!flex [&_[data-slot=scroll-area-viewport]>div]:min-h-full [&_[data-slot=scroll-area-viewport]>div]:flex-col"
+        onScroll={onScroll}
+        viewportRef={scrollRef}
+      >
+        <div className="flex flex-1 flex-col">{children}</div>
       </ScrollArea>
     </div>
   );

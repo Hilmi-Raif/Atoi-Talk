@@ -13,11 +13,7 @@ interface UploadDirectMediaOptions {
   signal?: AbortSignal;
 }
 
-/** API calls for media upload and URL refresh */
 export const mediaService = {
-  /**
-   * Upload a media file directly to storage using a backend-provided presigned URL.
-   */
   async uploadDirectMedia(file: File, options: UploadDirectMediaOptions): Promise<Media> {
     const body: UploadMediaRequest = {
       usage: options.usage,
@@ -59,9 +55,6 @@ export const mediaService = {
     return completeResponse.data.data;
   },
 
-  /**
-   * Compatibility wrapper for existing callers while upload flows migrate usage explicitly.
-   */
   async uploadMedia(file: File, captchaToken: string, signal?: AbortSignal): Promise<Media> {
     return mediaService.uploadDirectMedia(file, {
       usage: "message_attachment",
@@ -70,9 +63,6 @@ export const mediaService = {
     });
   },
 
-  /**
-   * Refresh a presigned URL for a media file
-   */
   async refreshMediaUrl(mediaId: string): Promise<string> {
     const response = await api.get<ApiResponse<{ url: string }>>(`/api/media/${mediaId}/url`);
     return response.data.data.url;

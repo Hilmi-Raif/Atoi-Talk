@@ -301,3 +301,35 @@ button .dark .bg-foreground:focus {
 .text-type__cursor--hidden {
   display: none;
 }
+
+:is(
+  [data-slot="dialog-content"],
+  [data-slot="dialog-overlay"],
+  [data-slot="dropdown-menu-content"],
+  [data-slot="dropdown-menu-sub-content"],
+  [data-slot="popover-content"],
+  [data-slot="select-content"],
+  [data-slot="sheet-content"],
+  [data-slot="sheet-overlay"],
+  [data-slot="tooltip-content"]
+)[data-state] {
+  animation-duration: 200ms;
+  animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(
+    [data-slot="dialog-content"],
+    [data-slot="dialog-overlay"],
+    [data-slot="dropdown-menu-content"],
+    [data-slot="dropdown-menu-sub-content"],
+    [data-slot="popover-content"],
+    [data-slot="select-content"],
+    [data-slot="sheet-content"],
+    [data-slot="sheet-overlay"],
+    [data-slot="tooltip-content"]
+  )[data-state] {
+    animation: none;
+    transition: none;
+  }
+}

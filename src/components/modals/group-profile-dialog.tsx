@@ -60,16 +60,13 @@ export function GroupProfileDialog({
   });
 
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen) {
       setIsAvatarLoaded(false);
-      const timer = setTimeout(() => {
-        setActiveTab("overview");
-        setMemberSearch("");
-        setIsEditGroupOpen(false);
-      }, 200);
-      return () => clearTimeout(timer);
+      setActiveTab("overview");
+      setMemberSearch("");
+      setIsEditGroupOpen(false);
     }
-  }, [isOpen, chat]);
+  }, [isOpen, chat.id]);
 
   const handleLeaveGroup = () => {
     setActiveChatId(null);

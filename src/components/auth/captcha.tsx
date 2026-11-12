@@ -18,6 +18,11 @@ export interface CaptchaHandle {
 
 export const Captcha = forwardRef<CaptchaHandle, CaptchaProps>(
   ({ onVerify, onError, onExpire, action, mode = "auto" }, ref) => {
+    const enabled = import.meta.env.VITE_CAPTCHA_ENABLED !== "false";
+    const disabledResponse = "captcha-disabled";
+    const onVerifyRef = useRef(onVerify);
+    onVerifyRef.current = onVerify;
+    const mountedRef = useRef(false);
     const turnstileRef = useRef<TurnstileInstance>(null);
     const existingToken = useAuthStore((s) => s.captchaToken);
     const setCaptchaToken = useAuthStore((s) => s.setCaptchaToken);
@@ -44,11 +49,24 @@ export const Captcha = forwardRef<CaptchaHandle, CaptchaProps>(
     useImperativeHandle(ref, () => ({
       reset: () => {
         clearRetryResetTimer();
+        if (!enabled) {
+          if (mode === "auto")
+            queueMicrotask(() => {
+              if (mountedRef.current) onVerifyRef.current(disabledResponse);
+            });
+          return;
+        }
         setCaptchaToken(null);
         turnstileRef.current?.reset();
       },
       execute: () => {
         clearRetryResetTimer();
+        if (!enabled) {
+          queueMicrotask(() => {
+            if (mountedRef.current) onVerifyRef.current(disabledResponse);
+          });
+          return;
+        }
         setCaptchaToken(null);
         if (mode === "execute" && !isWidgetReadyRef.current) {
           pendingExecuteRef.current = true;
@@ -59,18 +77,23 @@ export const Captcha = forwardRef<CaptchaHandle, CaptchaProps>(
         }
         turnstileRef.current?.execute();
       },
-      getResponse: () => turnstileRef.current?.getResponse(),
+      getResponse: () => (enabled ? turnstileRef.current?.getResponse() : disabledResponse),
     }));
 
     useEffect(() => {
-      if (existingToken && !hasRestoredRef.current) {
+      if (!enabled && mode === "auto" && !hasRestoredRef.current) {
+        hasRestoredRef.current = true;
+        onVerify(disabledResponse);
+      } else if (enabled && existingToken && !hasRestoredRef.current) {
         hasRestoredRef.current = true;
         onVerify(existingToken);
       }
-    }, [existingToken, onVerify]);
+    }, [enabled, mode, existingToken, onVerify]);
 
     useEffect(() => {
+      mountedRef.current = true;
       return () => {
+        mountedRef.current = false;
         clearRetryResetTimer();
       };
     }, []);
@@ -102,6 +125,8 @@ export const Captcha = forwardRef<CaptchaHandle, CaptchaProps>(
         turnstileRef.current?.execute();
       }
     };
+
+    if (!enabled) return null;
 
     return (
       <div

@@ -59,7 +59,7 @@ export function UserSelectionDialog({
   }, [search]);
 
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen) {
       setSearch("");
       setDebouncedSearch("");
       setSelectedUsers([]);

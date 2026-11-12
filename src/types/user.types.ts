@@ -1,7 +1,3 @@
-/**
- * User data transfer object
- * Matches API response structure
- */
 export interface User {
   id: string;
   email: string;
@@ -19,9 +15,6 @@ export interface User {
   is_banned?: boolean;
 }
 
-/**
- * Payload for user.update event
- */
 export interface UserUpdateEventPayload {
   id: string;
   username: string;
@@ -31,9 +24,6 @@ export interface UserUpdateEventPayload {
   last_seen_at?: string;
 }
 
-/**
- * Update profile request
- */
 export interface UpdateProfileRequest {
   username?: string;
   full_name: string;
@@ -42,9 +32,6 @@ export interface UpdateProfileRequest {
   delete_avatar?: boolean;
 }
 
-/**
- * Search users query parameters
- */
 export interface SearchUsersParams {
   query?: string;
   cursor?: string;

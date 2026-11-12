@@ -44,6 +44,14 @@ const hasBearerTokenHeader = (headers: unknown): boolean => {
 
 api.interceptors.request.use(
   (config) => {
+    if (
+      import.meta.env.VITE_CAPTCHA_ENABLED === "false" &&
+      config.data &&
+      Object.getPrototypeOf(config.data) === Object.prototype
+    ) {
+      config.data = { ...config.data };
+      delete config.data.captcha_token;
+    }
     const token = useAuthStore.getState().token;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;

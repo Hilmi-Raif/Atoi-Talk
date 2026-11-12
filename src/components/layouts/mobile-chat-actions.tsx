@@ -34,6 +34,14 @@ export function MobileChatActions() {
   const isBusy = useUIStore((state) => state.isBusy);
   const { mutateAsync: createPrivateChat } = useCreatePrivateChat();
 
+  useEffect(() => {
+    if (open) {
+      setCreatingChatId(null);
+      setSearch("");
+      setDebouncedSearch("");
+    }
+  }, [open]);
+
   const trimmedSearch = debouncedSearch.trim();
   const {
     data: searchResults,
@@ -60,7 +68,7 @@ export function MobileChatActions() {
 
   const handleDialogChange = (val: boolean) => {
     if (creatingChatId) return;
-    if (!val) {
+    if (val) {
       setSearch("");
       setDebouncedSearch("");
     }
@@ -88,12 +96,6 @@ export function MobileChatActions() {
 
       setOpen(false);
       navigate(`/chat/${newChat.id}`, { state: { initialUser: freshUser } });
-
-      setTimeout(() => {
-        setCreatingChatId(null);
-        setSearch("");
-        setDebouncedSearch("");
-      }, 500);
     } catch (error) {
       errorLog("Failed to create chat", error);
       toast.error("Failed to start conversation");

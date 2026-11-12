@@ -1,0 +1,126 @@
+name: atoitalk-e2e
+
+x-backend-env: &backend-env
+  APP_ENV: development
+  DB_HOST: postgres
+  DB_PORT: "5432"
+  DB_USER: e2e
+  DB_PASSWORD: local-e2e-only
+  DB_NAME: atoitalk_e2e
+  DB_SSLMODE: disable
+  DB_MAX_OPEN_CONNS: "10"
+  DB_MAX_IDLE_CONNS: "5"
+  REDIS_HOST: redis
+  REDIS_PORT: "6379"
+  REDIS_PASSWORD: ""
+  REDIS_DB: "0"
+  JWT_SECRET: isolated_e2e_jwt_secret_not_for_production_12345
+  JWT_EXP: "86400"
+  OTEL_ENABLED: "false"
+  ENABLE_PPROF: "false"
+  S3_ENDPOINT: http://s3mock:9090
+  S3_PRESIGN_ENDPOINT: http://127.0.0.1:19090
+  S3_PUBLIC_DOMAIN: http://127.0.0.1:19090/public-bucket
+  S3_REGION: us-east-1
+  S3_ACCESS_KEY: dummy
+  S3_SECRET_KEY: dummy
+  S3_BUCKET_PUBLIC: public-bucket
+  S3_BUCKET_PRIVATE: private-bucket
+  S3_FORCE_PATH_STYLE: "true"
+  MESSAGE_EVENT_STREAM: events:messages
+  MESSAGE_EVENT_STREAM_MAX_LEN: "10000"
+
+services:
+  postgres:
+    image: postgres:17.5-alpine
+    environment:
+      POSTGRES_USER: e2e
+      POSTGRES_PASSWORD: local-e2e-only
+      POSTGRES_DB: atoitalk_e2e
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U e2e -d atoitalk_e2e]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  redis:
+    image: redis:7.2-alpine
+    command: [redis-server, --save, "", --appendonly, "no"]
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  s3mock:
+    image: adobe/s3mock@sha256:7a37f0d796e81a28b970c892dcae532797014616b3312b467af8f0274ebf0c26
+    environment:
+      COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS: public-bucket,private-bucket
+    ports:
+      - 127.0.0.1:19090:9090
+  mailpit:
+    image: axllent/mailpit@sha256:c96991d9bef73594c246d89ca81411d4e916f03e76a7d2d72fa2ab5dd3c9ce24
+    ports:
+      - 127.0.0.1:18025:8025
+  api:
+    image: ghcr.io/hilmi-raif/atoitalk-api:0.1.5@sha256:60fc053a231dd01446dfab4f483775e767805c3652251f46a92aa1b666042d3d
+    environment:
+      <<: *backend-env
+      APP_PORT: "8080"
+      APP_URL: http://127.0.0.1:18080
+      APP_CORS_ALLOWED_ORIGINS: http://127.0.0.1:4174
+      DB_MIGRATE: "true"
+      RATE_LIMIT_ENABLED: "false"
+      CAPTCHA_ENABLED: "${CAPTCHA_ENABLED:-false}"
+      OTP_SECRET: isolated-e2e-otp-secret
+      OTP_EXP: "300"
+      OTP_RATE_LIMIT_SECONDS: "1"
+      TURNSTILE_SECRET_KEY: 1x0000000000000000000000000000000AA
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+      SMTP_FROM_EMAIL: noreply@atoitalk.test
+      SMTP_FROM_NAME: AtoiTalk E2E
+      SMTP_REQUIRE_TLS: "false"
+      GOOGLE_CLIENT_ID: unused-e2e
+      GOOGLE_CLIENT_SECRET: unused-e2e
+      GOOGLE_REDIRECT_URL: http://127.0.0.1:4174/auth/google/callback
+    ports:
+      - 127.0.0.1:18080:8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      s3mock:
+        condition: service_started
+      mailpit:
+        condition: service_started
+    healthcheck:
+      test: [CMD-SHELL, "wget -q -O - http://127.0.0.1:8080/readyz >/dev/null"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+  message-worker:
+    image: ghcr.io/hilmi-raif/atoitalk-message-worker:0.1.5@sha256:6f588d8655ae30fb09aa1bb0d5bc551944e512e4a21b1efd868fe8e31f1b3a8d
+    environment:
+      <<: *backend-env
+      MESSAGE_WORKER_POLL_INTERVAL: 100ms
+    depends_on:
+      api:
+        condition: service_healthy
+  websocket-gateway:
+    image: ghcr.io/hilmi-raif/atoitalk-websocket-gateway:0.1.5@sha256:4ea656db02015c339e2a778e13dafb036b86668377d54e46787c9ae5d7d6067c
+    environment:
+      <<: *backend-env
+      REALTIME_PORT: "8081"
+      REALTIME_INSTANCE_ID: e2e-gateway
+    ports:
+      - 127.0.0.1:18081:8081
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD-SHELL, "wget -q -O - http://127.0.0.1:8081/healthz >/dev/null"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
