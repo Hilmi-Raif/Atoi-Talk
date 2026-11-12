@@ -16,6 +16,11 @@ const makeMsg = (overrides: Partial<Message>): Message =>
   }) as Message;
 
 describe("getSystemMessageText", () => {
+  it("formats legacy system events with absent action metadata", () => {
+    expect(getSystemMessageText(makeMsg({ type: "system_create", action_data: undefined }))).toBe(
+      'Alice created group "Group"'
+    );
+  });
   it("system_create — shows group creation", () => {
     const msg = makeMsg({
       type: "system_create",

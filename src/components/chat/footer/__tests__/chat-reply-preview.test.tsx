@@ -36,6 +36,42 @@ const renderComponent = (override: Partial<ReturnType<typeof createProps>> = {})
 };
 
 describe("ChatReplyPreview", () => {
+  it.each([true, false])(
+    "labels a reply using the current user's identity (own=%s) and cancels only the reply",
+    (own) => {
+      const props = {
+        ...createProps(),
+        editMessage: null,
+        replyTo: { ...editMessage, content: "First\nSecond\nHidden" },
+        current: { id: own ? "user-1" : "other" },
+      };
+      render(<ChatReplyPreview {...(props as React.ComponentProps<typeof ChatReplyPreview>)} />);
+      expect(screen.getByText(own ? "You" : "User One")).toBeInTheDocument();
+      expect(screen.getByText("First")).toBeInTheDocument();
+      expect(screen.getByText("Second")).toBeInTheDocument();
+      expect(screen.queryByText("Hidden")).not.toBeInTheDocument();
+      fireEvent.click(screen.getByRole("button", { hidden: true }));
+      expect(props.onCancelReply).toHaveBeenCalledOnce();
+      expect(props.onCancelEdit).not.toHaveBeenCalled();
+    }
+  );
+  it("shows an attachment fallback when a reply has no text", () => {
+    renderComponent({ editMessage: { ...editMessage, content: "" } });
+    expect(screen.getByText("File")).toBeInTheDocument();
+  });
+  it("clears and focuses a mounted composer when cancelling an edit", () => {
+    const props = createProps();
+    render(
+      <>
+        <textarea ref={props.textareaRef} defaultValue="Draft" />
+        <ChatReplyPreview {...props} />
+      </>
+    );
+    fireEvent.click(screen.getByRole("button", { hidden: true }));
+    expect(props.textareaRef.current).toHaveValue("");
+    expect(props.textareaRef.current).toHaveFocus();
+    expect(props.onCancelEdit).toHaveBeenCalledOnce();
+  });
   it("allows cancelling edit mode when no submit is pending", () => {
     const { onCancelEdit } = renderComponent();
 

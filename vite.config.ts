@@ -46,10 +46,18 @@ export default defineConfig({
     },
   },
   test: {
+    include: ["src/**/*.test.{ts,tsx}"],
     globals: true,
     environment: "jsdom",
     setupFiles: ["./test/setup.ts"],
     css: false,
+    coverage: {
+      provider: "v8",
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: ["src/**/*.test.{ts,tsx}", "src/**/__tests__/**", "src/**/*.d.ts", "src/types/**"],
+      reporter: ["text-summary", "json-summary", "json", "html"],
+      thresholds: { lines: 90, statements: 90, functions: 90, branches: 90 },
+    },
   },
   build: {
     rollupOptions: {

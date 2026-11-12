@@ -41,7 +41,7 @@ export function PushNotificationMenuItem({
   };
   useEffect(() => {
     if (open) void action(prefs.refresh);
-    // Refresh once per opening; store updates must not restart the request.
+    // store updates must not restart the request while the menu is open
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
   if (!token) return null;

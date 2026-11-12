@@ -1,17 +1,11 @@
 import { User } from "./user.types";
 
-/**
- * Login request payload
- */
 export interface LoginRequest {
   email: string;
   password: string;
   captcha_token: string;
 }
 
-/**
- * Register user request payload
- */
 export interface RegisterUserRequest {
   email: string;
   username: string;
@@ -21,26 +15,17 @@ export interface RegisterUserRequest {
   captcha_token: string;
 }
 
-/**
- * Google login request payload
- */
 export interface GoogleLoginRequest {
   code: string;
   state: string;
 }
 
-/**
- * Google init request response payload
- */
 export interface GoogleInitResponse {
   auth_url: string;
   state: string;
   expires_in_seconds: number;
 }
 
-/**
- * Reset password request payload
- */
 export interface ResetPasswordRequest {
   email: string;
   password: string;
@@ -49,34 +34,22 @@ export interface ResetPasswordRequest {
   captcha_token: string;
 }
 
-/**
- * Change email request payload
- */
 export interface ChangeEmailRequest {
   email: string;
   code: string;
 }
 
-/**
- * Change password request payload
- */
 export interface ChangePasswordRequest {
   old_password?: string;
   new_password: string;
   confirm_password: string;
 }
 
-/**
- * Authentication response with token and user
- */
 export interface AuthResponse {
   token: string;
   user: User;
 }
 
-/**
- * Delete account request payload
- */
 export interface DeleteAccountRequest {
   password?: string;
 }

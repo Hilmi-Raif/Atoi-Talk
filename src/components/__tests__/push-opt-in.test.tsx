@@ -1,3 +1,4 @@
+import { toast } from "@/lib/toast";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { PushOptIn } from "../push-opt-in";
@@ -15,12 +16,67 @@ vi.mock("firebase/messaging", () => ({ isSupported: mocks.supported }));
 vi.mock("@/lib/toast", () => ({ toast: { error: vi.fn() } }));
 vi.mock("@/lib/push-config", () => ({ pushConfigured: () => true }));
 beforeEach(() => {
+  vi.clearAllMocks();
   localStorage.clear();
   mocks.token = "session";
   mocks.supported.mockResolvedValue(true);
   vi.stubGlobal("isSecureContext", true);
   mocks.enable.mockReset().mockResolvedValue(undefined);
   vi.stubGlobal("Notification", { permission: "default" });
+});
+it.each([new Error("Permission unavailable"), "failed"])(
+  "reports an unsuccessful opt in and remembers the invitation",
+  async (error) => {
+    mocks.enable.mockRejectedValue(error);
+    render(<PushOptIn />);
+    fireEvent.click(await screen.findByRole("button", { name: "Enable" }));
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith(
+        error instanceof Error ? error.message : "Could not enable notifications."
+      )
+    );
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(localStorage.getItem("atoitalk-push-invitation-dismissed")).toBe("true");
+  }
+);
+it("prevents dismissal and duplicate permission requests while opt in is pending", async () => {
+  let resolve!: () => void;
+  mocks.enable.mockReturnValue(
+    new Promise<void>((done) => {
+      resolve = done;
+    })
+  );
+  render(<PushOptIn />);
+  const dialog = await screen.findByRole("dialog");
+  fireEvent.click(screen.getByRole("button", { name: "Enable" }));
+  fireEvent.keyDown(dialog, { key: "Escape" });
+  fireEvent.click(screen.getByRole("button", { name: /^Enable/ }));
+  expect(dialog).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Later" })).toBeDisabled();
+  expect(mocks.enable).toHaveBeenCalledOnce();
+  resolve();
+  await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+});
+it("does not show a late support result after unmount", async () => {
+  let resolve!: (value: boolean) => void;
+  mocks.supported.mockReturnValue(
+    new Promise<boolean>((done) => {
+      resolve = done;
+    })
+  );
+  const view = render(<PushOptIn />);
+  view.unmount();
+  resolve(true);
+  await Promise.resolve();
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  expect(mocks.enable).not.toHaveBeenCalled();
+});
+it("handles a failed browser support check without requesting permission", async () => {
+  mocks.supported.mockRejectedValue(new Error("Browser unavailable"));
+  render(<PushOptIn />);
+  await waitFor(() => expect(mocks.supported).toHaveBeenCalled());
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  expect(mocks.enable).not.toHaveBeenCalled();
 });
 it("only requests permission after an explicit click", async () => {
   render(<PushOptIn />);

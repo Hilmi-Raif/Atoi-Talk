@@ -15,43 +15,52 @@ See [Atoi-Talk-API](https://github.com/Hilmi-Raif/Atoi-Talk-API) for the backend
 - Real-time updates via WebSocket integration
 - Advanced message features (replies, jump-to-source, editing, deletion)
 - Read receipts and typing indicators
+- Integrated emoji picker powered by `frimousse`
 
 ### Account & Security
 
 - Custom JWT authentication + Google OAuth login
-- Cloudflare Turnstile CAPTCHA for sensitive actions
+- Cloudflare Turnstile CAPTCHA for sensitive actions (configurable)
 - Comprehensive User Profile management
+
+### Notifications & PWA
+
+- Web push notifications via Firebase Cloud Messaging (FCM)
+- Progressive Web App (PWA) support with service worker caching
 
 ### Media & Attachments
 
 - Image uploads with native React Cropper integration
 - Avatar management for Users and Groups
+- File and attachment sharing with preview cards
 
 ### Performance & Optimization
 
 - Virtualized message lists using `Virtua` for handling high-volume chat histories smoothly
-- Infinity scroll for seamless older message loading
+- Infinite scroll for seamless older message loading
 - Optimized client-side state updates and React Query caching
 
 ### Admin Capabilities
 
 - Centralized Dashboard for platform statistics
-- User management (view, ban, unban)
+- User management (view, ban, unban, reset info)
 - Group moderation (view, dissolve, reset info)
 - Reporting system handling (manage and resolve user reports)
 
 ## Tech Stack
 
-| Layer                   | Technology                                        |
-| ----------------------- | ------------------------------------------------- |
-| Framework               | React 19 + Vite                                   |
-| Language                | TypeScript                                        |
-| Styling                 | Tailwind CSS v4, Radix UI Primitives              |
-| Icons & Animations      | Lucide React, Motion                              |
-| State Management        | Zustand (Client), TanStack React Query (Server)   |
-| Routing                 | React Router v7                                   |
-| Forms & Validation      | React Hook Form, Zod                              |
-| Utilities & Performance | Virtua (List Virtualization), Next Themes, Sonner |
+| Layer                   | Technology                                         |
+| ----------------------- | -------------------------------------------------- |
+| Framework               | React 19 + Vite                                    |
+| Language                | TypeScript                                         |
+| Styling                 | Tailwind CSS v4, Radix UI Primitives               |
+| Icons & Animations      | Lucide React, Motion                               |
+| State Management        | Zustand (Client), TanStack React Query (Server)    |
+| Routing                 | React Router v7                                    |
+| Forms & Validation      | React Hook Form, Zod                               |
+| Utilities & Performance | Virtua (List Virtualization), Next Themes, Sonner  |
+| Notifications & PWA     | Firebase Cloud Messaging, vite-plugin-pwa, Workbox |
+| Testing                 | Vitest, Playwright, Testing Library                |
 
 ## Project Structure
 
@@ -71,20 +80,28 @@ src/
 
 ## Environment Variables
 
-| Variable                  | Description                                                        |
-| ------------------------- | ------------------------------------------------------------------ |
-| `VITE_API_BASE_URL`       | Base URL for the core RESTful API (e.g., `http://localhost:3000`)  |
-| `VITE_WS_URL`             | WebSocket Server Address (e.g., `ws://localhost:3000/ws`)          |
-| `VITE_GOOGLE_CLIENT_ID`   | Your Google OAuth 2.0 Web Client ID                                |
-| `VITE_TURNSTILE_SITE_KEY` | Cloudflare Turnstile public site key                               |
-| `VITE_DEBUG_LOGS`         | Flag to enable detailed browser console debugging (`true`/`false`) |
+| Variable                            | Description                                                                                                             |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `VITE_API_BASE_URL`                 | Base URL for the core RESTful API (e.g., `http://localhost:8080`)                                                       |
+| `VITE_WS_URL`                       | WebSocket Server Address (e.g., `ws://localhost:8081/ws`)                                                               |
+| `VITE_GOOGLE_CLIENT_ID`             | Google OAuth 2.0 Web Client ID                                                                                          |
+| `VITE_TURNSTILE_SITE_KEY`           | Cloudflare Turnstile public site key                                                                                    |
+| `VITE_CAPTCHA_ENABLED`              | Defaults to `true`; only `false` disables the widget. Pair with backend `CAPTCHA_ENABLED=false` when disabling CAPTCHA. |
+| `VITE_DEBUG_LOGS`                   | Flag to enable detailed browser console debugging (`true`/`false`)                                                      |
+| `VITE_PUSH_ENABLED`                 | Flag to enable web push notifications (`true`/`false`)                                                                  |
+| `VITE_FIREBASE_API_KEY`             | Firebase Web API key                                                                                                    |
+| `VITE_FIREBASE_PROJECT_ID`          | Firebase project ID                                                                                                     |
+| `VITE_FIREBASE_MESSAGING_SENDER_ID` | Firebase messaging sender ID                                                                                            |
+| `VITE_FIREBASE_APP_ID`              | Firebase application ID                                                                                                 |
+| `VITE_FIREBASE_VAPID_KEY`           | Firebase Web Push public VAPID key                                                                                      |
 
 ## Getting Started
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/)
-- `pnpm`
+- [Node.js](https://nodejs.org/) (v22+)
+- [pnpm](https://pnpm.io/) (v10+)
+- [Docker Engine & Compose](https://docs.docker.com/) (optional, for running local backend & integration tests)
 
 ### Setup
 
@@ -117,4 +134,46 @@ pnpm run dev
 
 ```bash
 pnpm run build
+```
+
+## Testing
+
+### Unit & Component Tests
+
+Run unit tests via Vitest (enforcing 90% coverage threshold across lines, statements, functions, and branches):
+
+```bash
+pnpm test
+pnpm run test:coverage
+```
+
+### End-to-End Tests (Mock Browser Suite)
+
+Run isolated browser flows with mocked network and simulated services:
+
+```bash
+pnpm exec playwright install chromium
+pnpm run test:e2e
+```
+
+### End-to-End Tests (Live Integration Suite)
+
+To run the end-to-end integration tests against a real backend stack:
+
+1. Start the ephemeral backend containers:
+
+```bash
+docker compose -f e2e/backend/compose.yaml up -d --wait --wait-timeout 180
+```
+
+2. Run the integration test suite:
+
+```bash
+pnpm run test:e2e:integration
+```
+
+3. Stop the backend containers when finished:
+
+```bash
+docker compose -f e2e/backend/compose.yaml down -v
 ```

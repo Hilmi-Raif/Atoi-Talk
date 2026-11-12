@@ -11,7 +11,6 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/s
 import { Toaster } from "@/components/ui/sonner";
 import { WebSocketProvider } from "@/context/websocket-context";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { queryClient } from "@/lib/query-client";
 import ChatRoom from "@/pages/chat-room.tsx";
 import ForgotPassword from "@/pages/forgot-password";
 import GoogleCallback from "@/pages/google-callback";
@@ -20,7 +19,6 @@ import Landing from "@/pages/landing";
 import Login from "@/pages/login";
 import MobileChatListPage from "@/pages/mobile-chat-list";
 import Register from "@/pages/register";
-import { adminService, userService } from "@/services";
 import { useAuthStore, useUIStore } from "@/store";
 import { AnimatePresence } from "motion/react";
 import { Suspense, lazy, useEffect, useRef, useState } from "react";
@@ -38,33 +36,7 @@ const AdminDashboard = lazy(() => import("@/pages/admin/dashboard"));
 const AdminUsers = lazy(() => import("@/pages/admin/users"));
 const AdminGroups = lazy(() => import("@/pages/admin/groups"));
 const AdminReports = lazy(() => import("@/pages/admin/reports"));
-const ProtectedAdminRoute = lazy(() => {
-  const statsPromise = queryClient.ensureQueryData({
-    queryKey: ["admin-stats"],
-    queryFn: adminService.getDashboardStats,
-  });
-
-  const userPromise = queryClient.ensureQueryData({
-    queryKey: ["user", "current"],
-    queryFn: () => userService.getCurrentUser(),
-  });
-
-  const preloadChunks = Promise.all([
-    import("@/layouts/admin-layout"),
-    import("@/pages/admin/dashboard"),
-    import("@/pages/admin/users"),
-    import("@/pages/admin/groups"),
-    import("@/pages/admin/reports"),
-  ]);
-
-  return Promise.all([
-    import("@/components/routes/protected-admin-route"),
-    new Promise((resolve) => setTimeout(resolve, 1500)),
-    statsPromise.catch(() => null),
-    userPromise.catch(() => null),
-    preloadChunks,
-  ]).then(([module]) => module);
-});
+const ProtectedAdminRoute = lazy(() => import("@/components/routes/protected-admin-route"));
 
 const EmptyChatState = () => {
   return (

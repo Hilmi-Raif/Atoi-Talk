@@ -145,19 +145,12 @@ export interface PaginatedResponse<T> {
   meta: PaginationMeta;
 }
 
-/** API calls for admin dashboard, moderation, and reporting */
 export const adminService = {
-  /**
-   * Get dashboard statistics
-   */
   getDashboardStats: async () => {
     const response = await api.get<{ data: DashboardStats }>("/api/admin/dashboard");
     return response.data.data;
   },
 
-  /**
-   * Get users list with pagination
-   */
   getUsers: async (params?: { query?: string; role?: string; limit?: number; cursor?: string }) => {
     const response = await api.get<PaginatedResponse<AdminUserListResponse>>("/api/admin/users", {
       params,
@@ -165,33 +158,21 @@ export const adminService = {
     return response.data;
   },
 
-  /**
-   * Get user details by ID
-   */
   getUser: async (userId: string) => {
     const response = await api.get<{ data: AdminUserDetailResponse }>(`/api/admin/users/${userId}`);
     return response.data.data;
   },
 
-  /**
-   * Ban a user
-   */
   banUser: async (data: BanUserRequest) => {
     const response = await api.post("/api/admin/users/ban", data);
     return response.data;
   },
 
-  /**
-   * Unban a user
-   */
   unbanUser: async (userId: string) => {
     const response = await api.post(`/api/admin/users/${userId}/unban`);
     return response.data;
   },
 
-  /**
-   * Reset user info (avatar, bio, name)
-   */
   resetUserInfo: async (userId: string, data: Omit<ResetUserInfoRequest, "target_user_id">) => {
     const response = await api.post(`/api/admin/users/${userId}/reset`, {
       ...data,
@@ -200,9 +181,6 @@ export const adminService = {
     return response.data;
   },
 
-  /**
-   * Get groups list with pagination
-   */
   getGroups: async (params?: { query?: string; limit?: number; cursor?: string }) => {
     const response = await api.get<PaginatedResponse<AdminGroupListResponse>>("/api/admin/groups", {
       params,
@@ -210,9 +188,6 @@ export const adminService = {
     return response.data;
   },
 
-  /**
-   * Get group details by ID
-   */
   getGroupDetail: async (chatId: string) => {
     const response = await api.get<{ data: AdminGroupDetailResponse }>(
       `/api/admin/groups/${chatId}`
@@ -220,9 +195,6 @@ export const adminService = {
     return response.data.data;
   },
 
-  /**
-   * Get group members with pagination
-   */
   getGroupMembers: async (
     chatId: string,
     params?: { query?: string; cursor?: string; limit?: number }
@@ -234,9 +206,6 @@ export const adminService = {
     return response.data;
   },
 
-  /**
-   * Get group members for infinite scroll query
-   */
   getGroupMembersInfinite: async ({
     queryKey,
     pageParam,
@@ -258,25 +227,16 @@ export const adminService = {
     return response.data;
   },
 
-  /**
-   * Reset group info (name, description, avatar)
-   */
   resetGroupInfo: async (chatId: string, data: ResetGroupInfoRequest) => {
     const response = await api.post(`/api/admin/groups/${chatId}/reset`, data);
     return response.data;
   },
 
-  /**
-   * Dissolve/Delete a group
-   */
   dissolveGroup: async (chatId: string) => {
     const response = await api.delete(`/api/admin/groups/${chatId}`);
     return response.data;
   },
 
-  /**
-   * Get reports list with pagination
-   */
   getReports: async (params?: {
     status?: string;
     limit?: number;
@@ -289,9 +249,6 @@ export const adminService = {
     return response.data;
   },
 
-  /**
-   * Get report details by ID
-   */
   getReportDetail: async (reportId: string) => {
     const response = await api.get<{ data: ReportDetailResponse }>(
       `/api/admin/reports/${reportId}`
@@ -299,9 +256,6 @@ export const adminService = {
     return response.data.data;
   },
 
-  /**
-   * Resolve or reject a report
-   */
   resolveReport: async (reportId: string, data: ResolveReportRequest) => {
     const response = await api.put(`/api/admin/reports/${reportId}/resolve`, data);
     return response.data;

@@ -1,3 +1,5 @@
+import { useNotificationPreferences } from "@/lib/notification-preferences";
+import { useAuthStore } from "@/store";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { chatService } from "../chat.service";
 
@@ -19,6 +21,44 @@ import api from "@/lib/axios";
 const mockApi = vi.mocked(api);
 
 describe("chatService", () => {
+  it.each(["list", "detail"] as const)(
+    "does not import stale %s mute preferences after an account switch",
+    async (kind) => {
+      useAuthStore.setState({ token: "old" });
+      useNotificationPreferences.setState({ chats: [] });
+      let complete!: (value: object) => void;
+      mockApi.get.mockReturnValueOnce(
+        new Promise((resolve) => {
+          complete = resolve;
+        })
+      );
+      const pending =
+        kind === "list" ? chatService.getChats() : chatService.getChatById("old-chat");
+      useAuthStore.setState({ token: "new" });
+      const chat = { id: "old-chat", muted_forever: true };
+      complete({ data: { data: kind === "list" ? [chat] : chat } });
+      await pending;
+      expect(useNotificationPreferences.getState().chats).toEqual([]);
+    }
+  );
+  it.each(["list", "detail"] as const)(
+    "merges explicit mute state from a current-account %s response",
+    async (kind) => {
+      useAuthStore.setState({ token: "current" });
+      useNotificationPreferences.setState({ chats: [] });
+      const chat = { id: "muted", muted_forever: true, muted_until: null };
+      mockApi.get.mockResolvedValueOnce({ data: { data: kind === "list" ? [chat] : chat } });
+      if (kind === "list") await chatService.getChats();
+      else await chatService.getChatById("muted");
+      expect(useNotificationPreferences.getState().chats).toEqual([
+        { chat_id: "muted", muted_forever: true, muted_until: null },
+      ]);
+    }
+  );
+  it("uses an empty invite code when neither supported response key exists", async () => {
+    mockApi.put.mockResolvedValueOnce({ data: { data: { expires_at: "later" } } });
+    expect(await chatService.resetGroupInviteCode("g")).toEqual({ code: "", expires_at: "later" });
+  });
   beforeEach(() => {
     vi.clearAllMocks();
   });

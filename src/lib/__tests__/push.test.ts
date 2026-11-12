@@ -61,6 +61,68 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 describe("browser push lifecycle", () => {
+  it.each(["insecure", "unsupported", "unconfigured"])(
+    "does not opt in when the browser is %s",
+    async (condition) => {
+      if (condition === "insecure") vi.stubGlobal("isSecureContext", false);
+      if (condition === "unsupported") mocks.supported.mockResolvedValue(false);
+      if (condition === "unconfigured") vi.stubEnv("VITE_PUSH_ENABLED", "false");
+      const { enablePush } = await import("../push");
+      await expect(enablePush("session")).rejects.toThrow();
+      expect(mocks.put).not.toHaveBeenCalled();
+      expect(localStorage.getItem("atoitalk-push-enabled")).toBeNull();
+    }
+  );
+  it.each(["empty token", "provider failure", "registration failure"])(
+    "permits a fresh opt in after %s",
+    async (failure) => {
+      if (failure === "empty token") mocks.getToken.mockResolvedValueOnce("");
+      if (failure === "provider failure")
+        mocks.getToken.mockRejectedValueOnce(new Error("provider offline"));
+      if (failure === "registration failure")
+        mocks.put.mockRejectedValueOnce(new Error("API offline"));
+      const { enablePush } = await import("../push");
+      await expect(enablePush("old-session")).rejects.toThrow();
+      expect(localStorage.getItem("atoitalk-push-enabled")).toBeNull();
+      await enablePush("new-session");
+      expect(mocks.put.mock.lastCall?.[2].headers.Authorization).toBe("Bearer new-session");
+      expect(localStorage.getItem("atoitalk-push-enabled")).toBe("true");
+    }
+  );
+  it("routes a foreground notification action to its chat and returns the SDK unsubscribe", async () => {
+    const unsubscribe = vi.fn();
+    mocks.onMessage.mockReturnValueOnce(unsubscribe);
+    const { listenForPush } = await import("../push");
+    const { useNotificationPreferences } = await import("../notification-preferences");
+    const { toast } = await import("../toast");
+    useNotificationPreferences.setState({ loaded: true, enabled: true, chats: [] });
+    const navigate = vi.fn();
+    window.addEventListener("notification:navigate", navigate);
+    try {
+      const stop = await listenForPush();
+      mocks.onMessage.mock.calls[0][1]({
+        data: {
+          chat_id: "11111111-1111-4111-8111-111111111111",
+          title: "Sender",
+          body: "Preview",
+          event_id: "event-click",
+        },
+      });
+      expect(toast.info).toHaveBeenCalledWith(
+        "Sender",
+        expect.objectContaining({ description: "Preview", id: "event-click" })
+      );
+      const options = vi.mocked(toast.info).mock.lastCall?.[1];
+      options?.action?.onClick();
+      expect(navigate).toHaveBeenCalledWith(
+        expect.objectContaining({ detail: { path: "/chat/11111111-1111-4111-8111-111111111111" } })
+      );
+      stop?.();
+      expect(unsubscribe).toHaveBeenCalledOnce();
+    } finally {
+      window.removeEventListener("notification:navigate", navigate);
+    }
+  });
   it("only prompts after opt-in and preserves installation ownership when rebinding", async () => {
     const { enablePush, syncPush } = await import("../push");
     await syncPush("session-one");

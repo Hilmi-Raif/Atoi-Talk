@@ -45,7 +45,7 @@ if (pushConfigured()) {
   void isSupported().then((supported) => {
     if (supported)
       onBackgroundMessage(getMessaging(initializeApp(firebaseConfig)), () => {
-        // FCM displays the server's notification payload; showing it here would duplicate it.
+        // the notification payload is already displayed by the push service
       });
   });
 }

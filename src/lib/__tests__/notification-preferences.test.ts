@@ -9,6 +9,61 @@ beforeEach(() => {
   useNotificationPreferences.setState({ enabled: true, chats: [], loaded: false });
 });
 describe("notification preferences", () => {
+  it("does not fetch preferences without an authenticated token", async () => {
+    useAuthStore.setState({ token: null });
+    await useNotificationPreferences.getState().refresh();
+    expect(axios.get).not.toHaveBeenCalled();
+    expect(isChatMuted()).toBe(false);
+  });
+  it.each([1, 8, "forever"] as const)(
+    "saves a %s mute with its expected expiration",
+    async (duration) => {
+      vi.mocked(axios.put).mockResolvedValue({});
+      const before = Date.now();
+      await useNotificationPreferences.getState().setMute("timed", duration);
+      const mute = useNotificationPreferences.getState().chats[0];
+      expect(mute.muted_forever).toBe(duration === "forever");
+      if (typeof duration === "number") {
+        expect(Date.parse(mute.muted_until!)).toBeGreaterThanOrEqual(before + duration * 3600000);
+        expect(Date.parse(mute.muted_until!)).toBeLessThanOrEqual(Date.now() + duration * 3600000);
+      } else expect(mute.muted_until).toBeNull();
+    }
+  );
+  it.each(["global", "mute"] as const)(
+    "does not apply a completed %s save to a different account",
+    async (kind) => {
+      let complete!: (value: object) => void;
+      vi.mocked(axios.put).mockReturnValueOnce(
+        new Promise((resolve) => {
+          complete = resolve;
+        })
+      );
+      const pending =
+        kind === "global"
+          ? useNotificationPreferences.getState().setGlobal(false)
+          : useNotificationPreferences.getState().setMute("old", 1);
+      useAuthStore.setState({ token: "new-session" });
+      complete({});
+      await pending;
+      expect(axios.get).not.toHaveBeenCalled();
+      expect(useNotificationPreferences.getState()).toMatchObject({ enabled: true, chats: [] });
+    }
+  );
+  it("ignores an older response when a more recent refresh has completed", async () => {
+    let complete!: (value: object) => void;
+    vi.mocked(axios.get)
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          complete = resolve;
+        })
+      )
+      .mockResolvedValueOnce({ data: { data: { message_notifications_enabled: false } } });
+    const old = useNotificationPreferences.getState().refresh();
+    await useNotificationPreferences.getState().refresh();
+    complete({ data: { data: { message_notifications_enabled: true } } });
+    await old;
+    expect(useNotificationPreferences.getState().enabled).toBe(false);
+  });
   it("interprets expiry and indefinite mute", () => {
     expect(isChatMuted({ chat_id: "a", muted_forever: true })).toBe(true);
     expect(

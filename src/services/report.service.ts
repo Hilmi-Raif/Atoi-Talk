@@ -2,19 +2,12 @@ import { api } from "@/lib/axios";
 import { CreateReportRequest, ReportResponse } from "@/types";
 import { ApiResponse } from "@/types/api";
 
-/** API calls for creating and moderating reports */
 export const reportService = {
-  /**
-   * Create a new report
-   */
   createReport: async (data: CreateReportRequest): Promise<ReportResponse> => {
     const response = await api.post<ApiResponse<ReportResponse>>("/api/reports", data);
     return response.data.data;
   },
 
-  /**
-   * Delete a report
-   */
   deleteReport: async (reportId: string): Promise<void> => {
     await api.delete(`/api/admin/reports/${reportId}`);
   },

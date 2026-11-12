@@ -17,7 +17,7 @@ function installation(): { id: string; secret: string } {
       const value = JSON.parse(saved);
       if (typeof value.id === "string" && typeof value.secret === "string") return value;
     } catch {
-      /* Replace corrupted local installation data. */
+      // replace corrupted installation data
     }
   }
   const value = { id: crypto.randomUUID(), secret: crypto.randomUUID() + crypto.randomUUID() };
