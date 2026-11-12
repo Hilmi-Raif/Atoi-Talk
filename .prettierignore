@@ -1,0 +1,8 @@
+dist
+dist-ssr
+node_modules
+coverage
+playwright-report
+test-results
+CHANGELOG.md
+.release-please-manifest.json
