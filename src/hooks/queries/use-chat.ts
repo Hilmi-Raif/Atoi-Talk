@@ -141,6 +141,7 @@ export function useCreatePrivateChat() {
       }
 
       setActiveChatId(newChat.id);
+      void queryClient.invalidateQueries({ queryKey: ["chats"] });
     },
   });
 }
