@@ -310,4 +310,46 @@ describe("useVirtuaChat", () => {
     });
     expect(viewport.scrollTo).not.toHaveBeenCalled();
   });
+
+  it("clears a pending highlight timer when centering another message", () => {
+    const { result } = setup();
+    act(() => {
+      result.current.scrollToMessage("m2");
+    });
+    expect(result.current.highlightedMessageId).toBe("m2");
+    act(() => {
+      result.current.scrollToMessage("m1");
+    });
+    expect(result.current.highlightedMessageId).toBe("m1");
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(result.current.highlightedMessageId).toBeNull();
+  });
+
+  it("evaluates bottom-follow from an older-history position", () => {
+    const { result, options, rerender, viewport } = setup({ hasPreviousPage: true });
+    act(() => result.current.handleScroll(1500));
+    expect(options.fetchPreviousPage).toHaveBeenCalledTimes(1);
+    viewport.scrollOffset = 1500;
+    rerender({
+      ...options,
+      hasPreviousPage: true,
+      messages: [
+        ...options.messages,
+        {
+          id: "m3",
+          sender_id: "u1",
+          room_id: "r1",
+          content: "new",
+          created_at: "2026-03-30T10:02:00Z",
+          type: "text",
+        },
+      ],
+    });
+    act(() => {
+      vi.advanceTimersByTime(10);
+    });
+    expect(result.current.showScrollButton).toBe(true);
+  });
 });

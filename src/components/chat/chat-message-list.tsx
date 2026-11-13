@@ -86,7 +86,7 @@ export const ChatMessageList = ({
   isJumped,
 }: ChatMessageListProps) => {
   return (
-    <div className="flex-1 min-h-0 w-full relative flex flex-col">
+    <div className="flex-1 min-h-0 w-full relative flex flex-col items-center">
       {chat ? (
         <>
           {(isMessagesLoading && items.length === 0) ||
@@ -118,7 +118,7 @@ export const ChatMessageList = ({
 
           <VList
             ref={virtualizerRef}
-            className="h-full w-full chat-message-list py-1"
+            className="h-full w-full max-w-4xl chat-message-list py-1"
             style={{ height: "100%" }}
             shift={shifting}
             onScroll={handleScroll}

@@ -117,43 +117,45 @@ const ChatRoom = () => {
         </div>
       )}
 
-      <ChatMessageList
-        virtualizerRef={virtualizerRef as RefObject<VListHandle>}
-        shifting={shifting}
-        handleScroll={handleScroll}
-        items={items}
-        currentUser={currentUser}
-        chat={chat || null}
-        setReplyTo={setReplyTo}
-        setEditMessage={setEditMessage}
-        setNewMessageText={setNewMessageText}
-        setAttachmentMode={setAttachmentMode}
-        textareaRef={textareaRef}
-        setMessageToDelete={setMessageToDelete}
-        setShowDeleteModal={setShowDeleteModal}
-        setAttachments={setAttachments}
-        highlightedMessageId={highlightedMessageId ?? null}
-        handleJumpToMessage={handleJumpToMessage}
-        messageRefs={messageRefs}
-        activeMessageId={activeMessageId ?? null}
-        editMessage={editMessage}
-        isGlobalBusy={isGlobalBusy}
-        partnerProfile={partnerProfile}
-        handleClick={handleClick}
-        isMessagesLoading={isMessagesLoading}
-        isRemoteJumping={isRemoteJumping}
-        isMessagesError={isMessagesError}
-        jumpError={jumpError}
-        isRefetching={isRefetching}
-        isReadyToDisplay={isReadyToDisplay}
-        failedJumpTargetId={failedJumpTargetId}
-        jumpTargetId={jumpTargetId}
-        handleRemoteJump={handleRemoteJump}
-        refetchMessages={refetchMessages}
-        handleFetchNextPage={handleFetchNextPage}
-        handleFetchPreviousPage={handleFetchPreviousPage}
-        isJumped={isJumped}
-      />
+      <div className="flex-1 min-h-0 w-full relative flex flex-col">
+        <ChatMessageList
+          virtualizerRef={virtualizerRef as RefObject<VListHandle>}
+          shifting={shifting}
+          handleScroll={handleScroll}
+          items={items}
+          currentUser={currentUser}
+          chat={chat || null}
+          setReplyTo={setReplyTo}
+          setEditMessage={setEditMessage}
+          setNewMessageText={setNewMessageText}
+          setAttachmentMode={setAttachmentMode}
+          textareaRef={textareaRef}
+          setMessageToDelete={setMessageToDelete}
+          setShowDeleteModal={setShowDeleteModal}
+          setAttachments={setAttachments}
+          highlightedMessageId={highlightedMessageId ?? null}
+          handleJumpToMessage={handleJumpToMessage}
+          messageRefs={messageRefs}
+          activeMessageId={activeMessageId ?? null}
+          editMessage={editMessage}
+          isGlobalBusy={isGlobalBusy}
+          partnerProfile={partnerProfile}
+          handleClick={handleClick}
+          isMessagesLoading={isMessagesLoading}
+          isRemoteJumping={isRemoteJumping}
+          isMessagesError={isMessagesError}
+          jumpError={jumpError}
+          isRefetching={isRefetching}
+          isReadyToDisplay={isReadyToDisplay}
+          failedJumpTargetId={failedJumpTargetId}
+          jumpTargetId={jumpTargetId}
+          handleRemoteJump={handleRemoteJump}
+          refetchMessages={refetchMessages}
+          handleFetchNextPage={handleFetchNextPage}
+          handleFetchPreviousPage={handleFetchPreviousPage}
+          isJumped={isJumped}
+        />
+      </div>
 
       <ChatFooter
         onSendMessage={handleSendMessage}

@@ -260,148 +260,150 @@ const ChatFooter = ({
   }
 
   return (
-    <footer className="relative mx-auto p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] gap-2 w-full flex flex-col items-start bg-background border-t">
-      <Captcha
-        ref={captchaRef}
-        mode="execute"
-        onVerify={(token) => {
-          if (pendingUploadsRef.current.length > 0) {
-            processNextFile(token);
-          } else {
-            setIsSolvingCaptcha(false);
-          }
-        }}
-        onError={() => {
-          if (import.meta.env.DEV) {
-            console.warn("Security check failed.");
-          }
-          handleCaptchaError();
-        }}
-        onExpire={() => {
-          if (pendingUploadsRef.current.length > 0) {
-            captchaRef.current?.execute();
-          } else {
-            setIsSolvingCaptcha(false);
-          }
-        }}
-      />
-
-      <FloatingChatButtons
-        showReturnButton={showReturnButton}
-        onReturnJump={onReturnJump}
-        showScrollButton={showScrollButton}
-        scrollToBottom={scrollToBottom}
-      />
-
-      <div className="flex flex-col w-full gap-2">
-        <ChatReplyPreview
-          replyTo={replyTo}
-          editMessage={editMessage}
-          current={current}
-          finalReplySenderName={finalReplySenderName}
-          isGlobalUploading={isGlobalUploading}
-          isSending={isSending}
-          isEditing={isEditing}
-          isLoading={isLoading}
-          textareaRef={textareaRef}
-          onCancelReply={() => setReplyTo(null)}
-          onCancelEdit={() => {
-            setNewMessageText("");
-            setEditMessage(null);
-            setAttachmentMode(false);
-            setAttachments([]);
-            if (textareaRef.current) {
-              textareaRef.current.value = "";
-              textareaRef.current.focus();
+    <footer className="relative mx-auto p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] gap-2 w-full flex flex-col items-center bg-background border-t">
+      <div className="relative w-full max-w-4xl flex flex-col items-start gap-2">
+        <Captcha
+          ref={captchaRef}
+          mode="execute"
+          onVerify={(token) => {
+            if (pendingUploadsRef.current.length > 0) {
+              processNextFile(token);
+            } else {
+              setIsSolvingCaptcha(false);
+            }
+          }}
+          onError={() => {
+            if (import.meta.env.DEV) {
+              console.warn("Security check failed.");
+            }
+            handleCaptchaError();
+          }}
+          onExpire={() => {
+            if (pendingUploadsRef.current.length > 0) {
+              captchaRef.current?.execute();
+            } else {
+              setIsSolvingCaptcha(false);
             }
           }}
         />
 
-        <ChatFileDropzone
-          attachmentMode={attachmentMode}
-          uploadingFiles={uploadingFiles}
-          onFilesChange={handleFilesChange}
-          isGlobalUploading={isGlobalUploading}
-          isSending={!!isSending}
-          isEditing={!!isEditing}
-          isCancelling={isCancelling}
-          isLoading={isLoading}
-          attachments={attachments}
-          editMessage={editMessage}
-          fileListRef={fileListRef as React.RefObject<HTMLDivElement>}
-          onRefreshMedia={handleRefreshMedia}
-          onRemoveAttachment={(mediaId) =>
-            setAttachments(attachments.filter((a) => a.id !== mediaId))
-          }
-          onRemoveEditAttachment={(index) => {
-            if (!editMessage) return;
-            const updatedAttachments =
-              editMessage.attachments?.map((att, idx) => {
-                if (idx === index) {
-                  return { ...att, delete: true };
-                }
-                return att;
-              }) ?? editMessage?.attachments;
-
-            setEditMessage({
-              ...editMessage,
-              attachments: updatedAttachments,
-            });
-          }}
-          onCancelUploads={handleCancelUploads}
+        <FloatingChatButtons
+          showReturnButton={showReturnButton}
+          onReturnJump={onReturnJump}
+          showScrollButton={showScrollButton}
+          scrollToBottom={scrollToBottom}
         />
 
-        <ChatInputArea
-          isGlobalUploading={isGlobalUploading}
-          isSending={!!isSending}
-          isEditing={!!isEditing}
-          isLoading={isLoading}
-          attachmentMode={attachmentMode}
-          canSubmitMessage={canSubmitMessage}
-          onAttachmentModeChange={(mode) => {
-            setAttachmentMode(mode);
-            if (mode) {
-              if (!isGlobalUploading && !isSending) {
-                setAttachments([]);
-                setUploadingFiles([]);
-                if (editMessage) {
-                  const updatedEditMessage = {
-                    ...editMessage,
-                    attachments:
-                      editMessage.attachments?.map((att) => ({
-                        ...att,
-                        delete: true,
-                      })) ?? [],
-                  };
-                  setEditMessage(updatedEditMessage);
+        <div className="flex flex-col w-full gap-2">
+          <ChatReplyPreview
+            replyTo={replyTo}
+            editMessage={editMessage}
+            current={current}
+            finalReplySenderName={finalReplySenderName}
+            isGlobalUploading={isGlobalUploading}
+            isSending={isSending}
+            isEditing={isEditing}
+            isLoading={isLoading}
+            textareaRef={textareaRef}
+            onCancelReply={() => setReplyTo(null)}
+            onCancelEdit={() => {
+              setNewMessageText("");
+              setEditMessage(null);
+              setAttachmentMode(false);
+              setAttachments([]);
+              if (textareaRef.current) {
+                textareaRef.current.value = "";
+                textareaRef.current.focus();
+              }
+            }}
+          />
+
+          <ChatFileDropzone
+            attachmentMode={attachmentMode}
+            uploadingFiles={uploadingFiles}
+            onFilesChange={handleFilesChange}
+            isGlobalUploading={isGlobalUploading}
+            isSending={!!isSending}
+            isEditing={!!isEditing}
+            isCancelling={isCancelling}
+            isLoading={isLoading}
+            attachments={attachments}
+            editMessage={editMessage}
+            fileListRef={fileListRef as React.RefObject<HTMLDivElement>}
+            onRefreshMedia={handleRefreshMedia}
+            onRemoveAttachment={(mediaId) =>
+              setAttachments(attachments.filter((a) => a.id !== mediaId))
+            }
+            onRemoveEditAttachment={(index) => {
+              if (!editMessage) return;
+              const updatedAttachments =
+                editMessage.attachments?.map((att, idx) => {
+                  if (idx === index) {
+                    return { ...att, delete: true };
+                  }
+                  return att;
+                }) ?? editMessage?.attachments;
+
+              setEditMessage({
+                ...editMessage,
+                attachments: updatedAttachments,
+              });
+            }}
+            onCancelUploads={handleCancelUploads}
+          />
+
+          <ChatInputArea
+            isGlobalUploading={isGlobalUploading}
+            isSending={!!isSending}
+            isEditing={!!isEditing}
+            isLoading={isLoading}
+            attachmentMode={attachmentMode}
+            canSubmitMessage={canSubmitMessage}
+            onAttachmentModeChange={(mode) => {
+              setAttachmentMode(mode);
+              if (mode) {
+                if (!isGlobalUploading && !isSending) {
+                  setAttachments([]);
+                  setUploadingFiles([]);
+                  if (editMessage) {
+                    const updatedEditMessage = {
+                      ...editMessage,
+                      attachments:
+                        editMessage.attachments?.map((att) => ({
+                          ...att,
+                          delete: true,
+                        })) ?? [],
+                    };
+                    setEditMessage(updatedEditMessage);
+                  }
                 }
               }
-            }
-          }}
-          isEmojiOpen={isEmojiOpen}
-          onEmojiOpenChange={setIsEmojiOpen}
-          onEmojiSelect={(emoji) => {
-            const textarea = textareaRef.current;
-            if (!textarea) return;
+            }}
+            isEmojiOpen={isEmojiOpen}
+            onEmojiOpenChange={setIsEmojiOpen}
+            onEmojiSelect={(emoji) => {
+              const textarea = textareaRef.current;
+              if (!textarea) return;
 
-            const start = textarea.selectionStart;
-            const end = textarea.selectionEnd;
-            const text = newMessageText;
-            const nextText = text.substring(0, start) + emoji.native + text.substring(end);
+              const start = textarea.selectionStart;
+              const end = textarea.selectionEnd;
+              const text = newMessageText;
+              const nextText = text.substring(0, start) + emoji.native + text.substring(end);
 
-            setNewMessageText(nextText);
+              setNewMessageText(nextText);
 
-            setTimeout(() => {
-              textarea.selectionStart = textarea.selectionEnd = start + emoji.native.length;
-              textarea.focus();
-            }, 0);
-          }}
-          textareaRef={textareaRef}
-          newMessageText={newMessageText}
-          onNewMessageTextChange={setNewMessageText}
-          onSendMessage={handleSendMessage}
-          onTyping={handleTyping}
-        />
+              setTimeout(() => {
+                textarea.selectionStart = textarea.selectionEnd = start + emoji.native.length;
+                textarea.focus();
+              }, 0);
+            }}
+            textareaRef={textareaRef}
+            newMessageText={newMessageText}
+            onNewMessageTextChange={setNewMessageText}
+            onSendMessage={handleSendMessage}
+            onTyping={handleTyping}
+          />
+        </div>
       </div>
     </footer>
   );
