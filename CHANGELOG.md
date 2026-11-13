@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.1.0](https://github.com/hilmi-raif/Atoi-Talk/compare/v1.0.0...v1.1.0) (2026-11-13)
+
+
+### Features
+
+* **ui:** constrain desktop chat and input container to max-w-4xl ([acf23d4](https://github.com/hilmi-raif/Atoi-Talk/commit/acf23d43ab034150e88f4822e2ebf55818d2237c))
+
+
+### Bug Fixes
+
+* **chat:** sort chat list by latest message and refresh list on new chat ([d7ed136](https://github.com/hilmi-raif/Atoi-Talk/commit/d7ed136756a6aab5e881e806eb82999798ce539c))
+* **lightbox:** close mobile image detail on back button instead of navigating away ([5df794a](https://github.com/hilmi-raif/Atoi-Talk/commit/5df794a240d47962b56e9d0e2d7b37e03d0a0c32))
+
 ## 1.0.0 (2026-11-12)
 
 
