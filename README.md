@@ -1,4 +1,4 @@
-# atoitalk
+# AtoiTalk
 
 ![atoitalk Preview](https://github.com/user-attachments/assets/630de5f6-26c2-488f-9c5e-3783ddc11957)
 
@@ -177,3 +177,7 @@ pnpm run test:e2e:integration
 ```bash
 docker compose -f e2e/backend/compose.yaml down -v
 ```
+
+## License
+
+This project is licensed under the GNU Affero General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
