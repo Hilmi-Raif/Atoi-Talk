@@ -1,4 +1,5 @@
 import { ChatSearchInput } from "@/components/chat-search-input";
+import { ChatOnboarding } from "@/components/chat/chat-onboarding";
 import { MobileChatActions } from "@/components/layouts/mobile-chat-actions";
 import { MobileUserMenu } from "@/components/layouts/mobile-user-menu";
 import { NavChat } from "@/components/layouts/nav-chat";
@@ -28,8 +29,15 @@ export default function MobileChatListPage() {
     refetch,
   } = useChats({ query: searchQuery });
 
-  const chats =
-    data?.pages.flatMap((page) => page.data).filter((chat) => chat.last_message !== null) || [];
+  const chats = useMemo(() => {
+    const list =
+      data?.pages.flatMap((page) => page.data).filter((chat) => chat.last_message !== null) || [];
+    return [...list].sort((a, b) => {
+      const timeA = a.last_message ? new Date(a.last_message.created_at).getTime() : 0;
+      const timeB = b.last_message ? new Date(b.last_message.created_at).getTime() : 0;
+      return timeB - timeA;
+    });
+  }, [data]);
   const isChatListEmpty = chats.length === 0 && !searchQuery && !isLoading && !isError;
   const isSearchEmpty = chats.length === 0 && !!searchQuery.trim() && !isLoading && !isError;
 
@@ -58,17 +66,15 @@ export default function MobileChatListPage() {
   }, [debouncedSetSearch]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setGlobalLoading(false);
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, [setGlobalLoading]);
+    if (!isLoading) setGlobalLoading(false);
+  }, [isLoading, setGlobalLoading]);
 
   if (!currentUser) return null;
 
   return (
     <SidebarProvider>
-      <main className="flex h-[100dvh] w-full flex-col overflow-hidden bg-background text-foreground md:hidden">
+      <ChatOnboarding userId={currentUser.id} />
+      <main className="flex h-[100dvh] w-full flex-col overflow-hidden bg-background text-foreground lg:hidden">
         <header className="flex h-[63px] shrink-0 items-center justify-between border-b border-[#e4e4e7] bg-background px-4 dark:border-[#212224]">
           <div className="flex min-w-0 items-center gap-2">
             <div className="text-sidebar-primary-foreground flex aspect-square size-9 items-center justify-center rounded-lg">
@@ -87,18 +93,20 @@ export default function MobileChatListPage() {
         </header>
 
         <section className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background">
-          <ChatSearchInput
-            onSearch={debouncedSetSearch}
-            initialValue={searchQuery}
-            disabled={isChatListEmpty}
-          />
+          <div data-tour="chat-search">
+            <ChatSearchInput
+              onSearch={debouncedSetSearch}
+              initialValue={searchQuery}
+              disabled={isChatListEmpty}
+            />
+          </div>
           <div
             className="min-h-0 flex-1 overflow-y-auto bg-background"
             onScroll={handleScroll}
             onWheel={handleWheel}
             ref={scrollRef}
           >
-            {isSearchEmpty || isChatListEmpty ? (
+            {isChatListEmpty || isSearchEmpty ? (
               <div
                 role="status"
                 className="flex min-h-full items-center justify-center px-4 py-10 text-center text-sm text-muted-foreground"

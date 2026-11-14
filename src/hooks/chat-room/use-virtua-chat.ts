@@ -121,6 +121,26 @@ export const useVirtuaChat = ({
   const blockTopAutoFetchUntilRearmedRef = useRef(false);
   const wasAtBottomRef = useRef(true);
   const bottomLockUntilRef = useRef(0);
+  const bottomAlignGenerationRef = useRef(0);
+  const bottomScrollInputRef = useRef(false);
+
+  useEffect(() => {
+    const handleScrollInput = (event: Event) => {
+      if (event.target instanceof Element && event.target.closest(".chat-message-list")) {
+        bottomScrollInputRef.current = true;
+      }
+    };
+    document.addEventListener("wheel", handleScrollInput, { passive: true });
+    document.addEventListener("touchstart", handleScrollInput, { passive: true });
+    document.addEventListener("pointerdown", handleScrollInput, { passive: true });
+    document.addEventListener("keydown", handleScrollInput);
+    return () => {
+      document.removeEventListener("wheel", handleScrollInput);
+      document.removeEventListener("touchstart", handleScrollInput);
+      document.removeEventListener("pointerdown", handleScrollInput);
+      document.removeEventListener("keydown", handleScrollInput);
+    };
+  }, []);
 
   useEffect(() => {
     blockTopAutoFetchUntilRearmedRef.current = false;
@@ -165,11 +185,15 @@ export const useVirtuaChat = ({
       const lockActive = !hasPreviousPage && isBottomLockActive();
 
       if (lockActive) {
-        setShowScrollButton(false);
-        if (atBottom) {
+        if (atBottom || !bottomScrollInputRef.current) {
+          setShowScrollButton(false);
           wasAtBottomRef.current = true;
+          return true;
         }
-        return true;
+        bottomLockUntilRef.current = 0;
+        bottomAlignGenerationRef.current += 1;
+        bottomFollowTimeoutsRef.current.forEach((timerId) => window.clearTimeout(timerId));
+        bottomFollowTimeoutsRef.current = [];
       }
 
       setShowScrollButton(!atBottom || hasPreviousPage);
@@ -188,8 +212,11 @@ export const useVirtuaChat = ({
     }
 
     wasAtBottomRef.current = !hasPreviousPage;
+    bottomScrollInputRef.current = false;
+    const generation = ++bottomAlignGenerationRef.current;
 
     const alignToLatest = () => {
+      if (generation !== bottomAlignGenerationRef.current) return;
       const currentRef = virtualizerRef.current;
       if (!currentRef || items.length === 0) return;
       currentRef.scrollToIndex(items.length - 1, { align: "end" });

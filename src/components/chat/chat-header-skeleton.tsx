@@ -1,19 +1,18 @@
 import { Button } from "@/components/ui/button";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { CHAT_LAYOUT_BREAKPOINT, useIsMobile } from "@/hooks/use-mobile";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export function ChatHeaderSkeleton() {
-  const isMobile = useIsMobile();
+  const isMobile = useIsMobile(CHAT_LAYOUT_BREAKPOINT);
   const navigate = useNavigate();
 
   return (
     <header className="border-b dark:border-[#212224] border-[#e4e4e7] z-50 bg-background flex h-[63px] shrink-0 items-center gap-2">
       <div className="flex gap-2 px-4 w-full justify-between items-center">
         <div className="flex items-center justify-center gap-2">
-          {isMobile ? (
+          {isMobile && (
             <Button
               type="button"
               aria-label="Back to chats"
@@ -24,8 +23,6 @@ export function ChatHeaderSkeleton() {
             >
               <ArrowLeft className="size-4" />
             </Button>
-          ) : (
-            <SidebarTrigger className="mr-1" />
           )}
 
           <div className="flex items-center gap-2">

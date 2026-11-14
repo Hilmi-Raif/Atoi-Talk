@@ -1,8 +1,7 @@
 import { ModeToggle } from "@/components/mode-toggle.tsx";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { SidebarTrigger } from "@/components/ui/sidebar.tsx";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { CHAT_LAYOUT_BREAKPOINT, useIsMobile } from "@/hooks/use-mobile";
 import { useAuthStore, useChatStore, useUIStore } from "@/store";
 import { ChatListItem, User } from "@/types";
 import { ArrowLeft, Users } from "lucide-react";
@@ -39,7 +38,7 @@ const ChatHeader = ({
 }: ChatHeaderProps) => {
   const typingUsers = useChatStore((state) => state.typingUsers);
   const { user: currentUser } = useAuthStore();
-  const isMobile = useIsMobile();
+  const isMobile = useIsMobile(CHAT_LAYOUT_BREAKPOINT);
   const navigate = useNavigate();
 
   const isTyping = typingUsers[chat.id]?.some((id) => id !== currentUser?.id);
@@ -137,7 +136,7 @@ const ChatHeader = ({
       <header className="border-b dark:border-[#212224] border-[#e4e4e7] z-50 bg-background flex h-[63px] shrink-0 items-center gap-2">
         <div className="flex gap-2 px-4 w-full justify-between items-center">
           <div className="flex items-center justify-center gap-2">
-            {isMobile ? (
+            {isMobile && (
               <Button
                 type="button"
                 aria-label="Back to chats"
@@ -149,8 +148,6 @@ const ChatHeader = ({
               >
                 <ArrowLeft className="size-4" />
               </Button>
-            ) : (
-              <SidebarTrigger className={`mr-1`} />
             )}
 
             <div

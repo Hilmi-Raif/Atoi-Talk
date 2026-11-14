@@ -21,7 +21,7 @@ export default function AdminLayout() {
   }, [location.pathname]);
 
   return (
-    <SidebarProvider>
+    <SidebarProvider style={{ "--sidebar-width": "16rem" } as React.CSSProperties}>
       <div className="flex min-h-screen w-full bg-muted/40">
         <AdminSidebar />
         <main className="flex-1 flex flex-col h-screen overflow-hidden">

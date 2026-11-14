@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import Lightbox, { Slide } from "yet-another-react-lightbox";
 import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
 import "yet-another-react-lightbox/plugins/thumbnails.css";
@@ -22,6 +23,30 @@ export function GlobalLightbox({
   showThumbnails = false,
 }: GlobalLightboxProps) {
   const plugins = [Zoom, ...(showThumbnails && slides.length > 1 ? [Thumbnails] : [])];
+  const closeRef = useRef(close);
+  closeRef.current = close;
+
+  useEffect(() => {
+    if (!open) return;
+
+    let popped = false;
+
+    window.history.pushState({ ...window.history.state, lightboxOpen: true }, "");
+
+    const handlePopState = () => {
+      popped = true;
+      closeRef.current();
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      if (!popped && window.history.state?.lightboxOpen) {
+        window.history.back();
+      }
+    };
+  }, [open]);
 
   return (
     <Lightbox

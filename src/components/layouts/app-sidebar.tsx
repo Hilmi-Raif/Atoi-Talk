@@ -1,4 +1,5 @@
 import { ChatSearchInput } from "@/components/chat-search-input.tsx";
+import { ChatOnboarding } from "@/components/chat/chat-onboarding";
 import { NavChat } from "@/components/layouts/nav-chat.tsx";
 import { NavFooter } from "@/components/layouts/nav-footer.tsx";
 import { NavHeader } from "@/components/layouts/nav-header.tsx";
@@ -25,8 +26,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     refetch,
   } = useChats({ query: searchQuery });
 
-  const chats =
-    data?.pages.flatMap((page) => page.data).filter((chat) => chat.last_message !== null) || [];
+  const chats = React.useMemo(() => {
+    const list =
+      data?.pages.flatMap((page) => page.data).filter((chat) => chat.last_message !== null) || [];
+    return [...list].sort((a, b) => {
+      const timeA = a.last_message ? new Date(a.last_message.created_at).getTime() : 0;
+      const timeB = b.last_message ? new Date(b.last_message.created_at).getTime() : 0;
+      return timeB - timeA;
+    });
+  }, [data]);
   const isChatListEmpty = chats.length === 0 && !searchQuery && !isLoading && !isError;
   const isSearchEmpty = chats.length === 0 && !!searchQuery.trim() && !isLoading && !isError;
 
@@ -55,16 +63,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   }, [debouncedSetSearch]);
 
   React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setGlobalLoading(false);
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, [setGlobalLoading]);
+    if (!isLoading) setGlobalLoading(false);
+  }, [isLoading, setGlobalLoading]);
 
   if (!currentUser) return null;
 
   return (
     <Sidebar className={"bg-background"} collapsible="icon" {...props}>
+      <ChatOnboarding userId={currentUser.id} />
       <SidebarHeader className="border-b bg-background">
         <NavHeader />
       </SidebarHeader>
@@ -74,11 +80,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         onWheel={handleWheel}
         scrollRef={scrollRef}
       >
-        <ChatSearchInput
-          onSearch={debouncedSetSearch}
-          initialValue={searchQuery}
-          disabled={isChatListEmpty}
-        />
+        <div data-tour="chat-search">
+          <ChatSearchInput
+            onSearch={debouncedSetSearch}
+            initialValue={searchQuery}
+            disabled={isChatListEmpty}
+          />
+        </div>
         {isSearchEmpty || isChatListEmpty ? (
           <div
             role="status"

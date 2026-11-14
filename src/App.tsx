@@ -1,16 +1,18 @@
+import { OnboardingLoadingContext } from "@/components/chat/chat-onboarding";
 import { AppSidebar } from "@/components/layouts/app-sidebar.tsx";
 import { BannedUserDialog } from "@/components/modals/banned-user-dialog";
 import { UserProfileDialog } from "@/components/modals/user-profile-dialog";
 import { ModeToggle } from "@/components/mode-toggle.tsx";
+import { OnboardingProvider } from "@/components/providers/onboarding-provider";
 import { PushProvider } from "@/components/providers/push-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import ProtectedRoute from "@/components/routes/protected-route";
 import PublicRoute from "@/components/routes/public-route";
 import { LoadingScreen } from "@/components/ui/loading-screen";
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar.tsx";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar.tsx";
 import { Toaster } from "@/components/ui/sonner";
 import { WebSocketProvider } from "@/context/websocket-context";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { CHAT_LAYOUT_BREAKPOINT, useIsMobile } from "@/hooks/use-mobile";
 import ChatRoom from "@/pages/chat-room.tsx";
 import ForgotPassword from "@/pages/forgot-password";
 import GoogleCallback from "@/pages/google-callback";
@@ -40,12 +42,9 @@ const ProtectedAdminRoute = lazy(() => import("@/components/routes/protected-adm
 
 const EmptyChatState = () => {
   return (
-    <SidebarInset className="h-screen overflow-hidden flex flex-col relative bg-sidebar">
+    <SidebarInset className="h-full min-h-0 min-w-0 overflow-hidden flex flex-col relative bg-sidebar">
       <header className="absolute top-0 left-0 w-full outline-1 dark:outline-[#212224] outline-[#e4e4e7] z-50 bg-background flex h-[63px] shrink-0 items-center gap-2">
-        <div className="flex gap-2 px-4 w-full justify-between items-center">
-          <div className="flex items-center justify-center gap-2">
-            <SidebarTrigger className={`mr-1`} />
-          </div>
+        <div className="flex gap-2 px-4 w-full justify-end items-center">
           <div className="flex items-center gap-2">
             <ModeToggle />
           </div>
@@ -70,7 +69,7 @@ const EmptyChatState = () => {
 const AnimatedRoutes = () => {
   const location = useLocation();
   const isFirstRender = useRef(true);
-  const isMobile = useIsMobile();
+  const isMobile = useIsMobile(CHAT_LAYOUT_BREAKPOINT);
 
   useEffect(() => {
     isFirstRender.current = false;
@@ -153,15 +152,23 @@ const AnimatedRoutes = () => {
                     <Route path="*" element={<Navigate to="/chat" replace />} />
                   </Routes>
                 ) : (
-                  <SidebarProvider>
-                    <AppSidebar />
-                    <Routes>
-                      <Route path="/" element={<EmptyChatState />} />
-                      <Route path=":chatId" element={<ChatRoom />} />
-                      <Route path="u/:userId" element={<ChatRoom />} />
-                      <Route path="*" element={<Navigate to="/chat" replace />} />
-                    </Routes>
-                  </SidebarProvider>
+                  <div className="chat-workspace-shell">
+                    <SidebarProvider
+                      open
+                      className="chat-workspace"
+                      style={
+                        { "--sidebar-width": "var(--chat-sidebar-width)" } as React.CSSProperties
+                      }
+                    >
+                      <AppSidebar collapsible="none" className="shrink-0 border-r bg-background" />
+                      <Routes>
+                        <Route path="/" element={<EmptyChatState />} />
+                        <Route path=":chatId" element={<ChatRoom />} />
+                        <Route path="u/:userId" element={<ChatRoom />} />
+                        <Route path="*" element={<Navigate to="/chat" replace />} />
+                      </Routes>
+                    </SidebarProvider>
+                  </div>
                 )
               }
             />
@@ -200,19 +207,26 @@ function App() {
 
   const globalLoading = useUIStore((state) => state.globalLoading);
   const loadingMessage = useUIStore((state) => state.loadingMessage);
+  const [loadingVisible, setLoadingVisible] = useState(false);
 
   return (
     <ThemeProvider>
       <LoadingScreen
+        minimumVisibleMs={1000}
+        onVisibilityChange={setLoadingVisible}
         isLoading={showSplash || globalLoading}
         message={globalLoading ? loadingMessage || "Loading" : "Initializing AtoiTalk"}
       />
-      <Router>
-        <UserProfileDialog />
-        <BannedUserDialog />
-        <AnimatedRoutes />
-        <Toaster position="top-center" />
-      </Router>
+      <OnboardingLoadingContext.Provider value={showSplash || globalLoading || loadingVisible}>
+        <OnboardingProvider>
+          <Router>
+            <UserProfileDialog />
+            <BannedUserDialog />
+            <AnimatedRoutes />
+            <Toaster position="top-center" />
+          </Router>
+        </OnboardingProvider>
+      </OnboardingLoadingContext.Provider>
     </ThemeProvider>
   );
 }

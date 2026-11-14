@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useCurrentUser, useLogout } from "@/hooks/queries";
 import { getInitials } from "@/lib/avatar-utils";
-import { queryClient } from "@/lib/query-client";
 import { toast } from "@/lib/toast";
 import { useUIStore } from "@/store";
 import { User } from "@/types";
@@ -78,6 +77,7 @@ export function MobileUserMenu({ current }: { current: User }) {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
+            data-tour="account"
             type="button"
             disabled={isBusy}
             className="inline-flex size-8 items-center justify-center rounded-full border bg-background disabled:pointer-events-none disabled:opacity-50"
@@ -110,16 +110,8 @@ export function MobileUserMenu({ current }: { current: User }) {
               <DropdownMenuGroup>
                 <DropdownMenuItem
                   onSelect={() => {
-                    const hasCachedData = queryClient.getQueryData(["admin-stats"]);
-
-                    if (!hasCachedData) {
-                      setGlobalLoading(true, "Initializing AtoiTalk");
-                      setTimeout(() => {
-                        navigate("/admin/dashboard");
-                      }, 300);
-                    } else {
-                      setTimeout(() => navigate("/admin/dashboard"), 150);
-                    }
+                    setGlobalLoading(true, "Opening Admin");
+                    navigate("/admin/dashboard");
                   }}
                 >
                   <LayoutDashboard className="h-4 w-4" />

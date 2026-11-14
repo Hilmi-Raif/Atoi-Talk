@@ -393,7 +393,6 @@ const ChatFooter = ({
 
             setTimeout(() => {
               textarea.selectionStart = textarea.selectionEnd = start + emoji.native.length;
-              textarea.focus();
             }, 0);
           }}
           textareaRef={textareaRef}

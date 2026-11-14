@@ -115,7 +115,7 @@ describe.each(["mobile", "sidebar"] as const)("%s account menu", (layout) => {
       if (cached) queryClient.setQueryData(["admin-stats"], { users: 5 });
       setup(admin);
       fireEvent.click(within(await open()).getByRole("menuitem", { name: "Admin Dashboard" }));
-      if (!cached) expect(useUIStore.getState().globalLoading).toBe(true);
+      expect(useUIStore.getState().globalLoading).toBe(true);
       expect(await screen.findByRole("heading", { name: "Admin destination" })).toBeVisible();
     }
   );

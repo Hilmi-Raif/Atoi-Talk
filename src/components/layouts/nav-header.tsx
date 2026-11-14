@@ -128,6 +128,8 @@ export function NavHeader() {
             <Dialog open={open} onOpenChange={handleDialogChange}>
               <DialogTrigger asChild>
                 <Button
+                  data-tour="new-chat"
+                  aria-label="New chat"
                   className="size-8 group-data-[collapsible=icon]:hidden"
                   variant="outline"
                   size="icon"
@@ -224,6 +226,7 @@ export function NavHeader() {
               disabled={isBusy}
               onClick={() => setPublicSearchOpen(true)}
               title="Groups"
+              data-tour="groups"
             >
               <Globe className="size-4" />
             </Button>

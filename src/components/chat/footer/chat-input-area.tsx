@@ -112,7 +112,7 @@ export function ChatInputArea({
         }}
         enterKeyHint={isMobile ? "enter" : "send"}
         placeholder={isEditing ? "Edit message..." : "Type a message..."}
-        className="min-h-[20px] max-h-[140px] !px-2 !py-2 bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 resize-none px-0 shadow-none scrollbar-thin"
+        className="chat-message-input min-h-[20px] max-h-[140px] !px-2 !py-2 bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 resize-none px-0 shadow-none"
         rows={1}
         disabled={disabled}
         maxLength={4000}

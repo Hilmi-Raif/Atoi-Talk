@@ -207,6 +207,42 @@ describe("useVirtuaChat", () => {
     expect(result.current.showScrollButton).toBe(false);
   });
 
+  it("shows the arrow and cancels pending bottom alignment when scrolling up immediately after a jump", () => {
+    const { result, viewport } = setup();
+    act(() => vi.advanceTimersByTime(1000));
+    act(() => result.current.scrollToBottom());
+    viewport.scrollOffset = 1500;
+    act(() => result.current.handleScroll(1500));
+    expect(result.current.showScrollButton).toBe(false);
+
+    viewport.scrollOffset = 400;
+    const scroller = document.createElement("div");
+    scroller.className = "chat-message-list";
+    document.body.appendChild(scroller);
+    act(() => scroller.dispatchEvent(new WheelEvent("wheel", { bubbles: true, deltaY: -100 })));
+    act(() => result.current.handleScroll(400));
+    scroller.remove();
+    expect(result.current.showScrollButton).toBe(true);
+    viewport.scrollTo.mockClear();
+    viewport.scrollToIndex.mockClear();
+    act(() => vi.advanceTimersByTime(1000));
+    expect(result.current.showScrollButton).toBe(true);
+    expect(viewport.scrollTo).not.toHaveBeenCalled();
+    expect(viewport.scrollToIndex).not.toHaveBeenCalled();
+  });
+
+  it("keeps initial bottom alignment pending while message heights are still being measured", () => {
+    const { result, viewport } = setup();
+    act(() => vi.advanceTimersByTime(1000));
+    act(() => result.current.scrollToBottom());
+    viewport.scrollSize = 4000;
+    viewport.scrollOffset = 800;
+    act(() => result.current.handleScroll(800));
+    viewport.scrollTo.mockClear();
+    act(() => vi.advanceTimersByTime(300));
+    expect(viewport.scrollTo).toHaveBeenCalledWith(4000);
+  });
+
   it("sets a sticky message date only for scrollable content", () => {
     const { result, viewport } = setup();
     act(() => result.current.handleScroll(800));
@@ -309,5 +345,47 @@ describe("useVirtuaChat", () => {
       vi.advanceTimersByTime(1000);
     });
     expect(viewport.scrollTo).not.toHaveBeenCalled();
+  });
+
+  it("clears a pending highlight timer when centering another message", () => {
+    const { result } = setup();
+    act(() => {
+      result.current.scrollToMessage("m2");
+    });
+    expect(result.current.highlightedMessageId).toBe("m2");
+    act(() => {
+      result.current.scrollToMessage("m1");
+    });
+    expect(result.current.highlightedMessageId).toBe("m1");
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(result.current.highlightedMessageId).toBeNull();
+  });
+
+  it("evaluates bottom-follow from an older-history position", () => {
+    const { result, options, rerender, viewport } = setup({ hasPreviousPage: true });
+    act(() => result.current.handleScroll(1500));
+    expect(options.fetchPreviousPage).toHaveBeenCalledTimes(1);
+    viewport.scrollOffset = 1500;
+    rerender({
+      ...options,
+      hasPreviousPage: true,
+      messages: [
+        ...options.messages,
+        {
+          id: "m3",
+          sender_id: "u1",
+          room_id: "r1",
+          content: "new",
+          created_at: "2026-03-30T10:02:00Z",
+          type: "text",
+        },
+      ],
+    });
+    act(() => {
+      vi.advanceTimersByTime(10);
+    });
+    expect(result.current.showScrollButton).toBe(true);
   });
 });

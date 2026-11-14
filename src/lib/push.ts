@@ -1,10 +1,7 @@
 import axios from "axios";
 import { getApp, getApps, initializeApp } from "firebase/app";
 import { deleteToken, getMessaging, getToken, isSupported, onMessage } from "firebase/messaging";
-import { openNotificationChat } from "./notification-navigation";
-import { isChatMuted, useNotificationPreferences } from "./notification-preferences";
 import { firebaseConfig, pushConfigured } from "./push-config";
-import { toast } from "./toast";
 
 const installationKey = "atoitalk-push-installation";
 const enabledKey = "atoitalk-push-enabled";
@@ -176,21 +173,6 @@ export function disablePush(session?: string | null): Promise<void> {
 
 export async function listenForPush(): Promise<() => void> {
   const sdk = await messaging();
-  return onMessage(sdk, (payload) => {
-    const prefs = useNotificationPreferences.getState();
-    if (
-      !prefs.loaded ||
-      !prefs.enabled ||
-      isChatMuted(prefs.chats.find((m) => m.chat_id === payload.data?.chat_id))
-    )
-      return;
-    toast.info(payload.notification?.title || payload.data?.title || "AtoiTalk", {
-      description: payload.notification?.body || payload.data?.body || "Ada pesan baru",
-      id: payload.data?.event_id || payload.messageId,
-      action: {
-        label: "Open chat",
-        onClick: () => openNotificationChat(payload.data?.chat_id),
-      },
-    });
-  });
+  // foreground messages already arrive through the chat realtime connection
+  return onMessage(sdk, () => {});
 }

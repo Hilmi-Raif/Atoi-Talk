@@ -4,7 +4,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../App";
 
 const state = vi.hoisted(() => ({ mobile: false }));
-vi.mock("@/hooks/use-mobile", () => ({ useIsMobile: () => state.mobile }));
+vi.mock("@/hooks/use-mobile", () => ({
+  CHAT_LAYOUT_BREAKPOINT: 1024,
+  useIsMobile: () => state.mobile,
+}));
 vi.mock("@/components/layouts/app-sidebar.tsx", () => ({
   AppSidebar: () => <aside>Chat sidebar</aside>,
 }));
@@ -86,6 +89,11 @@ describe("application routing and splash", () => {
     show("/chat", true);
     expect(screen.getByRole("heading", { name: "Mobile conversations" })).toBeVisible();
     expect(screen.queryByText("Chat sidebar")).not.toBeInTheDocument();
+  });
+  it("does not offer sidebar collapse in the desktop chat workspace", () => {
+    show("/chat", true);
+    expect(screen.getByText("Chat sidebar")).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Toggle Sidebar" })).not.toBeInTheDocument();
   });
   it("opens invitations without requiring a session", () => {
     show("/invite/public-code");
