@@ -24,7 +24,17 @@ jobs:
         with:
           filters: |
             code:
-              - '!**.md'
+              - 'src/**'
+              - 'public/**'
+              - 'e2e/**'
+              - 'index.html'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - 'vite.config.ts'
+              - 'tsconfig*.json'
+              - 'playwright.config.ts'
+              - 'eslint.config.js'
+              - '.github/workflows/ci.yml'
 
   quality:
     name: Code Quality and Coverage
