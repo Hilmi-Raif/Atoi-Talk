@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/hilmi-raif/atoitalk/compare/v1.0.0...v1.1.0) (2026-11-14)
+
+
+### Features
+
+* **chat:** refine workspace onboarding and notification experience ([d4e0d55](https://github.com/hilmi-raif/atoitalk/commit/d4e0d55d9db5398dd6e8fae1320734b167853718))
+
 ## 1.0.0 (2026-11-12)
 
 
