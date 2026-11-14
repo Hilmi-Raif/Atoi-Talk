@@ -128,12 +128,16 @@ async function register(request: APIRequestContext, label: string) {
   return (await response.json()).data;
 }
 
-async function authenticate(context: BrowserContext, session: { token: string; user: unknown }) {
+async function authenticate(
+  context: BrowserContext,
+  session: { token: string; user: { id: string } }
+) {
   await context.addInitScript((session) => {
     localStorage.setItem(
       "auth-storage",
       JSON.stringify({ state: { ...session, isAuthenticated: true }, version: 0 })
     );
+    localStorage.setItem(`atoitalk:onboarding:${session.user.id}`, "seen");
   }, session);
 }
 
@@ -793,6 +797,9 @@ test("an invite joins a real private group and a non-admin is redirected from ad
 
 test("a registered user logs in through the real form and logs out", async ({ page, request }) => {
   const session = await register(request, "login");
+  await page.addInitScript((userId) => {
+    localStorage.setItem(`atoitalk:onboarding:${userId}`, "seen");
+  }, session.user.id);
   await page.goto("/login");
   await page.getByLabel("Email", { exact: true }).fill(session.user.email);
   await page.getByLabel("Password", { exact: true }).fill(password);

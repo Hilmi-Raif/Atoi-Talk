@@ -7,8 +7,9 @@ import { BrowserRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NavFooter } from "../layouts/nav-footer";
 
-const { mockSetGlobalLoading, mockToast } = vi.hoisted(() => {
+const { mockSetGlobalLoading, mockToast, currentUserState } = vi.hoisted(() => {
   return {
+    currentUserState: { role: "user" },
     mockSetGlobalLoading: vi.fn(),
     mockToast: {
       success: vi.fn(),
@@ -53,6 +54,7 @@ vi.mock("@/hooks/queries", () => ({
       avatar: null,
       bio: "Test Bio",
       has_password: true,
+      role: currentUserState.role,
     },
     refetch: mockRefetchUser,
   }),
@@ -162,11 +164,30 @@ describe("NavFooter Component", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    currentUserState.role = "user";
   });
 
   it("renders user info correctly", () => {
     renderComponent();
     expect(screen.getByText("Test User")).toBeInTheDocument();
+  });
+
+  it("always shows transition loading when returning from admin", async () => {
+    const { user } = renderComponent({ mode: "admin", activeMenu: "footer-menu" });
+    await user.click(screen.getByRole("menuitem", { name: "Back to App" }));
+    expect(mockSetGlobalLoading).toHaveBeenCalledWith(true, "Opening Chat");
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/chat"));
+  });
+
+  it("starts readiness loading and navigates immediately to admin", async () => {
+    currentUserState.role = "admin";
+    const { user } = renderComponent({
+      current: { ...defaultProps.current, role: "admin" },
+      activeMenu: "footer-menu",
+    });
+    await user.click(screen.getByRole("menuitem", { name: "Admin Dashboard" }));
+    expect(mockNavigate).toHaveBeenCalledWith("/admin/dashboard");
+    expect(mockSetGlobalLoading).toHaveBeenCalledWith(true, "Opening Admin");
   });
 
   it("groups related menu items without extra separators", () => {

@@ -1,7 +1,20 @@
 import { toast } from "@/lib/toast";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { ChatOnboarding } from "../chat/chat-onboarding";
+import { OnboardingProvider } from "../providers/onboarding-provider";
 import { PushOptIn } from "../push-opt-in";
+const tour = vi.hoisted(() => ({
+  drive: vi.fn(),
+  destroy: vi.fn(),
+  config: {} as { onDestroyed?: () => void },
+}));
+vi.mock("driver.js", () => ({
+  driver: (config: typeof tour.config) => {
+    tour.config = config;
+    return tour;
+  },
+}));
 const mocks = vi.hoisted(() => ({
   token: "session" as string | null,
   enable: vi.fn(),
@@ -9,7 +22,7 @@ const mocks = vi.hoisted(() => ({
 }));
 vi.mock("@/store", () => ({
   useAuthStore: (select: (s: { token: string | null }) => unknown) =>
-    select({ token: mocks.token }),
+    select({ token: mocks.token, user: { id: "user1" } } as { token: string | null }),
 }));
 vi.mock("@/lib/push", () => ({ enablePush: mocks.enable }));
 vi.mock("firebase/messaging", () => ({ isSupported: mocks.supported }));
@@ -18,6 +31,7 @@ vi.mock("@/lib/push-config", () => ({ pushConfigured: () => true }));
 beforeEach(() => {
   vi.clearAllMocks();
   localStorage.clear();
+  sessionStorage.clear();
   mocks.token = "session";
   mocks.supported.mockResolvedValue(true);
   vi.stubGlobal("isSecureContext", true);
@@ -92,6 +106,43 @@ it("remembers Later across refreshes", async () => {
   view.unmount();
   render(<PushOptIn />);
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+});
+it("does not persist an accidental close as Later", async () => {
+  render(<PushOptIn />);
+  fireEvent.keyDown(await screen.findByRole("dialog"), { key: "Escape" });
+  await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  expect(localStorage.getItem("atoitalk-push-invitation-dismissed")).toBeNull();
+});
+it("ignores outside pointer clicks but still allows closing with Escape", async () => {
+  render(<PushOptIn />);
+  const dialog = await screen.findByRole("dialog");
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+  fireEvent.pointerDown(document.body, { pointerType: "mouse", button: 0 });
+  fireEvent.click(document.body);
+  expect(dialog).toBeInTheDocument();
+  expect(sessionStorage.getItem("atoitalk-push-invitation-dismissed")).toBeNull();
+  fireEvent.keyDown(dialog, { key: "Escape" });
+  await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+});
+it("waits for onboarding to close before offering notifications", async () => {
+  const target = document.createElement("button");
+  target.dataset.tour = "groups";
+  document.body.append(target);
+  render(
+    <OnboardingProvider>
+      <ChatOnboarding userId="user1" />
+      <PushOptIn />
+    </OnboardingProvider>
+  );
+  await waitFor(() => expect(tour.drive).toHaveBeenCalled());
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  await act(async () => {
+    tour.config.onDestroyed?.();
+  });
+  expect(await screen.findByRole("dialog")).toBeInTheDocument();
+  target.remove();
 });
 it.each(["denied", "granted"])("does not prompt when permission is %s", (permission) => {
   vi.stubGlobal("Notification", { permission });

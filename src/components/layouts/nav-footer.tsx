@@ -1,7 +1,6 @@
 import { DeleteAccountDialog } from "@/components/modals/delete-account-dialog";
 import { PushNotificationMenuItem } from "@/components/push-notification-menu-item";
 import { useCurrentUser, useLogout } from "@/hooks/queries";
-import { queryClient } from "@/lib/query-client";
 import { toast } from "@/lib/toast";
 import { useUIStore } from "@/store";
 import { useNavigate } from "react-router-dom";
@@ -98,6 +97,7 @@ export function NavFooter({
           >
             <DropdownMenuTrigger asChild>
               <SidebarMenuButton
+                data-tour={mode === "app" ? "account" : undefined}
                 size="lg"
                 disabled={isBusy}
                 className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground gap-2"
@@ -139,9 +139,8 @@ export function NavFooter({
                       <DropdownMenuItem
                         onSelect={() => {
                           setOpenMobile(false);
-                          setTimeout(() => {
-                            navigate("/");
-                          }, 300);
+                          setGlobalLoading(true, "Opening Chat");
+                          navigate("/chat");
                         }}
                       >
                         <Home className="h-4 w-4" />
@@ -152,16 +151,8 @@ export function NavFooter({
                         onSelect={() => {
                           setOpenMobile(false);
 
-                          const hasCachedData = queryClient.getQueryData(["admin-stats"]);
-
-                          if (!hasCachedData) {
-                            setGlobalLoading(true, "Initializing AtoiTalk");
-                            setTimeout(() => {
-                              navigate("/admin/dashboard");
-                            }, 300);
-                          } else {
-                            setTimeout(() => navigate("/admin/dashboard"), 150);
-                          }
+                          setGlobalLoading(true, "Opening Admin");
+                          navigate("/admin/dashboard");
                         }}
                       >
                         <LayoutDashboard className="h-4 w-4" />

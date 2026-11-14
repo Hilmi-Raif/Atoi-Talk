@@ -36,9 +36,15 @@ const turnstileScript = `
   })();
 `;
 
-export const test = base.extend<{ isolatedApp: void }>({
+export const test = base.extend<{ isolatedApp: void; returningUser: boolean }>({
+  returningUser: [true, { option: true }],
   isolatedApp: [
-    async ({ page }, use) => {
+    async ({ page, returningUser }, use) => {
+      if (returningUser) {
+        await page.addInitScript(() => {
+          localStorage.setItem("atoitalk:onboarding:u1", "seen");
+        });
+      }
       await page.route("https://challenges.cloudflare.com/**", (route) =>
         route.fulfill({ contentType: "application/javascript", body: turnstileScript })
       );

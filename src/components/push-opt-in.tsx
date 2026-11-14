@@ -1,3 +1,5 @@
+import { OnboardingLoadingContext } from "@/components/chat/chat-onboarding";
+import { useOnboarding } from "@/components/providers/onboarding-provider";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,13 +15,19 @@ import { pushConfigured } from "@/lib/push-config";
 import { toast } from "@/lib/toast";
 import { useAuthStore } from "@/store";
 import { isSupported } from "firebase/messaging";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 
 const invitationKey = "atoitalk-push-invitation-dismissed";
 
 export function PushOptIn() {
+  const isLoading = useContext(OnboardingLoadingContext);
+  const { pending } = useOnboarding();
   const token = useAuthStore((state) => state.token);
-  const [dismissed, setDismissed] = useState(() => localStorage.getItem(invitationKey) === "true");
+  const [dismissed, setDismissed] = useState(
+    () =>
+      localStorage.getItem(invitationKey) === "true" ||
+      sessionStorage.getItem(invitationKey) === "true"
+  );
   const [supported, setSupported] = useState(false);
   const [busy, setBusy] = useState(false);
   const eligible =
@@ -44,16 +52,16 @@ export function PushOptIn() {
       active = false;
     };
   }, [eligible]);
-  const dismiss = () => {
-    localStorage.setItem(invitationKey, "true");
+  const dismiss = (remember = true) => {
+    (remember ? localStorage : sessionStorage).setItem(invitationKey, "true");
     setDismissed(true);
   };
-  if (!eligible || !supported) return null;
+  if (!eligible || !supported || isLoading || pending) return null;
   return (
     <Dialog
       open
       onOpenChange={(open) => {
-        if (!open && !busy) dismiss();
+        if (!open && !busy) dismiss(false);
       }}
     >
       <DialogContent
@@ -61,7 +69,7 @@ export function PushOptIn() {
           if (busy) event.preventDefault();
         }}
         onPointerDownOutside={(event) => {
-          if (busy) event.preventDefault();
+          event.preventDefault();
         }}
       >
         <DialogHeader>
@@ -69,7 +77,7 @@ export function PushOptIn() {
           <DialogDescription>Get notified about new messages on this device.</DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button variant="outline" disabled={busy} onClick={dismiss}>
+          <Button variant="outline" disabled={busy} onClick={() => dismiss()}>
             Later
           </Button>
           <Button

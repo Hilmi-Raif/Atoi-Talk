@@ -89,7 +89,7 @@ describe("browser push lifecycle", () => {
       expect(localStorage.getItem("atoitalk-push-enabled")).toBe("true");
     }
   );
-  it("routes a foreground notification action to its chat and returns the SDK unsubscribe", async () => {
+  it("does not show a foreground message toast and returns the SDK unsubscribe", async () => {
     const unsubscribe = vi.fn();
     mocks.onMessage.mockReturnValueOnce(unsubscribe);
     const { listenForPush } = await import("../push");
@@ -108,15 +108,8 @@ describe("browser push lifecycle", () => {
           event_id: "event-click",
         },
       });
-      expect(toast.info).toHaveBeenCalledWith(
-        "Sender",
-        expect.objectContaining({ description: "Preview", id: "event-click" })
-      );
-      const options = vi.mocked(toast.info).mock.lastCall?.[1];
-      options?.action?.onClick();
-      expect(navigate).toHaveBeenCalledWith(
-        expect.objectContaining({ detail: { path: "/chat/11111111-1111-4111-8111-111111111111" } })
-      );
+      expect(toast.info).not.toHaveBeenCalled();
+      expect(navigate).not.toHaveBeenCalled();
       stop?.();
       expect(unsubscribe).toHaveBeenCalledOnce();
     } finally {
@@ -221,9 +214,9 @@ describe("browser push lifecycle", () => {
     expect(toast.info).not.toHaveBeenCalled();
     useNotificationPreferences.setState({ chats: [] });
     callback(payload);
-    expect(toast.info).toHaveBeenCalledOnce();
+    expect(toast.info).not.toHaveBeenCalled();
   });
-  it("shows the sender and preview without activating global loading", async () => {
+  it("receives foreground messages without a toast or global loading", async () => {
     const { listenForPush, enablePush } = await import("../push");
     const { useNotificationPreferences } = await import("../notification-preferences");
     const { useUIStore } = await import("@/store");
@@ -237,10 +230,7 @@ describe("browser push lifecycle", () => {
       notification: { title: "Alya", body: "Halo" },
       data: { event_id: "event" },
     });
-    expect(toast.info).toHaveBeenCalledWith(
-      "Alya",
-      expect.objectContaining({ description: "Halo" })
-    );
+    expect(toast.info).not.toHaveBeenCalled();
     expect(changes).not.toHaveBeenCalled();
     stop();
   });

@@ -134,7 +134,7 @@ export default function Landing() {
                 <span>AtoiTalk © {new Date().getFullYear()}</span>
                 <span className="h-4 w-px bg-border" />
                 <a
-                  href="https://github.com/scrKiddie/AtoiTalk"
+                  href="https://github.com/hilmi-raif/atoitalk"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="transition-colors hover:text-foreground"

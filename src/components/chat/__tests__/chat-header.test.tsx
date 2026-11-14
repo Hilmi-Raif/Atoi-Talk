@@ -11,6 +11,7 @@ let mockIsMobile = true;
 let mockIsBusy = false;
 
 vi.mock("@/hooks/use-mobile", () => ({
+  CHAT_LAYOUT_BREAKPOINT: 1024,
   useIsMobile: () => mockIsMobile,
 }));
 

@@ -29,6 +29,14 @@ vi.mock("@/components/auth/captcha", () => ({
   }),
 }));
 vi.mock("@/lib/logger", () => ({ errorLog: vi.fn() }));
+vi.mock("@/components/ui/emoji-picker", () => ({
+  EmojiPicker: ({ onEmojiSelect }: { onEmojiSelect: (emoji: { native: string }) => void }) => (
+    <button onClick={() => onEmojiSelect({ native: "😀" })}>Choose emoji</button>
+  ),
+  EmojiPickerSearch: () => null,
+  EmojiPickerContent: () => null,
+  EmojiPickerFooter: () => null,
+}));
 vi.mock("@/services/media.service", () => ({ mediaService: { refreshMediaUrl: vi.fn() } }));
 
 type Props = ComponentProps<typeof ChatFooter>;
@@ -79,6 +87,31 @@ afterEach(() => {
 });
 
 describe("ChatFooter", () => {
+  it("keeps the picker open for repeated selections and dismisses it with Escape", async () => {
+    const { container, props } = show();
+    fireEvent.click(container.querySelector("button:has(svg.lucide-smile)")!);
+    fireEvent.click(await screen.findByRole("button", { name: "Choose emoji" }));
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    });
+    expect(screen.getByRole("button", { name: "Choose emoji" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Choose emoji" }));
+    expect(props.setNewMessageText).toHaveBeenCalledTimes(2);
+    fireEvent.keyDown(screen.getByRole("button", { name: "Choose emoji" }), { key: "Escape" });
+    await waitFor(() =>
+      expect(screen.queryByRole("button", { name: "Choose emoji" })).not.toBeInTheDocument()
+    );
+  });
+  it("dismisses the emoji picker when clicking outside it", async () => {
+    const { container } = show();
+    fireEvent.click(container.querySelector("button:has(svg.lucide-smile)")!);
+    await screen.findByRole("button", { name: "Choose emoji" });
+    fireEvent.pointerDown(document.body, { button: 0, pointerType: "mouse" });
+    fireEvent.click(document.body);
+    await waitFor(() =>
+      expect(screen.queryByRole("button", { name: "Choose emoji" })).not.toBeInTheDocument()
+    );
+  });
   it.each([false, true])(
     "refreshes a broken image in an edit without replacing other attachments (failure=%s)",
     async (fails) => {

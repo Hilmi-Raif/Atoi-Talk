@@ -9,6 +9,39 @@ interface FloatingChatButtonsProps {
   scrollToBottom: () => void;
 }
 
+// hold hidden overflow across two frames to stop mobile momentum before scrolling
+let momentumStop: Promise<void> | null = null;
+
+const stopMomentum = (): Promise<void> => {
+  if (typeof window === "undefined" || !window.matchMedia("(pointer: coarse)").matches) {
+    return Promise.resolve();
+  }
+
+  const scrollEl = document.querySelector<HTMLElement>(".chat-message-list");
+  if (!scrollEl) return Promise.resolve();
+  if (momentumStop) return momentumStop;
+
+  const prevValue = scrollEl.style.overflowY;
+  const prevPriority = scrollEl.style.getPropertyPriority("overflow-y");
+  scrollEl.style.setProperty("overflow-y", "hidden", "important");
+  void scrollEl.offsetHeight;
+
+  momentumStop = new Promise((resolve) => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (prevValue) {
+          scrollEl.style.setProperty("overflow-y", prevValue, prevPriority);
+        } else {
+          scrollEl.style.removeProperty("overflow-y");
+        }
+        momentumStop = null;
+        resolve();
+      });
+    });
+  });
+  return momentumStop;
+};
+
 export const FloatingChatButtons = ({
   showReturnButton,
   onReturnJump,
@@ -16,7 +49,7 @@ export const FloatingChatButtons = ({
   scrollToBottom,
 }: FloatingChatButtonsProps) => {
   return (
-    <div className="absolute -top-12 right-4 z-10 flex gap-2 pointer-events-none">
+    <div className="absolute -top-14 right-4 sm:right-6 z-10 flex items-center gap-2 pointer-events-none">
       <AnimatePresence>
         {showReturnButton && onReturnJump && (
           <motion.div
@@ -27,10 +60,11 @@ export const FloatingChatButtons = ({
           >
             <Button
               size="icon"
-              className="rounded-md bg-background text-foreground border shadow-sm hover:bg-muted transition-all"
-              onClick={onReturnJump}
+              className="h-10 w-10 rounded-full bg-background/95 backdrop-blur-sm text-foreground border border-border/80 shadow-md hover:bg-muted hover:shadow-lg transition-all"
+              onPointerDown={stopMomentum}
+              onClick={() => stopMomentum().then(onReturnJump)}
             >
-              <SendToBack className="size-5 md:size-4" />
+              <SendToBack className="size-4" />
             </Button>
           </motion.div>
         )}
@@ -46,10 +80,11 @@ export const FloatingChatButtons = ({
           >
             <Button
               size="icon"
-              className="rounded-full bg-background text-foreground border shadow-sm hover:bg-muted transition-all"
-              onClick={scrollToBottom}
+              className="h-10 w-10 rounded-full bg-background/95 backdrop-blur-sm text-foreground border border-border/80 shadow-md hover:bg-muted hover:shadow-lg transition-all"
+              onPointerDown={stopMomentum}
+              onClick={() => stopMomentum().then(scrollToBottom)}
             >
-              <ArrowDown className="size-5" />
+              <ArrowDown className="size-4.5" />
             </Button>
           </motion.div>
         )}

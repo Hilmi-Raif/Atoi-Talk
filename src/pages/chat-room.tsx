@@ -91,7 +91,7 @@ const ChatRoom = () => {
   } = useChatRoom();
 
   return (
-    <SidebarInset className="flex flex-col h-[100dvh] relative overflow-hidden bg-sidebar">
+    <SidebarInset className="flex flex-col h-[100dvh] lg:h-full min-h-0 min-w-0 relative overflow-hidden bg-sidebar">
       <ChatRoomHeader
         chat={chat || null}
         partnerId={partnerId || null}

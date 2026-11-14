@@ -25,12 +25,8 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (!isLoading) {
-      const timer = setTimeout(() => {
-        setGlobalLoading(false);
-      }, 100);
-      return () => clearTimeout(timer);
+      setGlobalLoading(false);
     }
-    return () => setGlobalLoading(false);
   }, [isLoading, setGlobalLoading]);
 
   const cards = [

@@ -107,7 +107,13 @@ export function MobileChatActions() {
     <>
       <Dialog open={open} onOpenChange={handleDialogChange}>
         <DialogTrigger asChild>
-          <Button className="size-8" variant="outline" size="icon" disabled={isBusy}>
+          <Button
+            data-tour="new-chat"
+            className="size-8"
+            variant="outline"
+            size="icon"
+            disabled={isBusy}
+          >
             <MailPlus className="size-4" />
             <span className="sr-only">New chat</span>
           </Button>
@@ -199,6 +205,7 @@ export function MobileChatActions() {
         disabled={isBusy}
         onClick={() => setPublicSearchOpen(true)}
         title="Groups"
+        data-tour="groups"
       >
         <Globe className="size-4" />
         <span className="sr-only">Groups</span>

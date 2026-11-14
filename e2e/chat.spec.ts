@@ -57,6 +57,19 @@ test("CHAT-01 opens private history from a direct link", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Send message", exact: true })).toBeDisabled();
 });
 
+test.describe("first visit", () => {
+  test.use({ returningUser: false });
+  test("ONBOARD-01 lets a new user dismiss the tour and use the composer", async ({ page }) => {
+    await page.goto("/chat");
+    await expect(page.getByRole("button", { name: "Skip tour" })).toBeVisible();
+    await page.getByRole("button", { name: "Skip tour" }).click();
+    await expect(page.getByRole("button", { name: "Skip tour" })).toHaveCount(0);
+    await page.goto(`/chat/${chatId}`);
+    await page.getByPlaceholder("Type a message...").fill("Draft after onboarding");
+    await expect(page.getByPlaceholder("Type a message...")).toHaveValue("Draft after onboarding");
+  });
+});
+
 test("CHAT-02 sends text and renders the returned message", async ({ page }) => {
   await page.route("**/api/messages", async (route) => {
     expect(route.request().postDataJSON()).toMatchObject({

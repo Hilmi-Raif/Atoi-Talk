@@ -54,9 +54,9 @@ it.each(["loading", "error"])("does not show empty search during %s", (mode) => 
   render(<AppSidebar />);
   expect(screen.queryByText("No chats found.")).not.toBeInTheDocument();
 });
-it("uses the same empty message without a search on mobile", () => {
+it("shows the original empty message without a search on mobile", () => {
   state.query = "";
   render(<MobileChatListPage />);
   expect(screen.getByRole("status")).toHaveTextContent("No chats found.");
-  expect(screen.queryByText("Select a chat and start messaging")).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Show me around" })).not.toBeInTheDocument();
 });
